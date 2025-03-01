@@ -1,25 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PublicationsModule } from './publications/publications.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Publication } from './entities/publication.entity';
+import { PhotoModule } from './photo/photo.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    PublicationsModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'admin',
-      password: '1234',
-      database: 'db',
-      entities: [Publication],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
     }),
+    PhotoModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

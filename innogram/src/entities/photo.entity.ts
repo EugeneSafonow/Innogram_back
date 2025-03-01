@@ -6,7 +6,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Publication {
+export class Photo {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -15,6 +15,9 @@ export class Publication {
 
   @Column({ unique: true })
   image_url: string;
+
+  @Column({ unique: true })
+  key: string;
 
   @Column()
   is_public: boolean;
