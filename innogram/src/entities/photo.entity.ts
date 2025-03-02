@@ -13,7 +13,7 @@ export class Photo {
   @Column()
   description: string;
 
-  @Column({ unique: true })
+  @Column()
   image_url: string;
 
   @Column({ unique: true })

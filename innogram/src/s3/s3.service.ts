@@ -1,12 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
+import { Readable } from 'stream';
+import { S3ResponseDTO } from './dto/s3ResponseDTO.dto';
 
 @Injectable()
 export class S3Service {
@@ -43,17 +47,45 @@ export class S3Service {
     const fileExtension = file.originalname.split('.').pop();
     const uniqueKey = `${uuidv4()}.${fileExtension}`;
 
-    const key = `${uniqueKey}`;
-
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: this.bucketName,
-        Key: key,
+        Key: uniqueKey,
         Body: file.buffer,
         ContentType: file.mimetype,
       }),
     );
 
-    return key;
+    return uniqueKey;
+  }
+
+  public async getFile(key: string): Promise<S3ResponseDTO> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const response = await this.s3Client.send(command);
+      if (!response.Body) {
+        throw new Error(`Could not find file: ${key}`);
+      }
+
+      return {
+        stream: response.Body as Readable,
+        contentType: response.ContentType || 'application/octet-stream',
+      };
+    } catch (error) {
+      throw new NotFoundException(`${error.message}`);
+    }
+  }
+
+  public async deleteFile(key: string): Promise<void> {
+    await this.s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      }),
+    );
   }
 }
