@@ -6,10 +6,12 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Res,
   UploadedFile,
   UseInterceptors,
+  UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { Photo } from '../entities/photo.entity';
@@ -19,6 +21,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../s3/s3.service';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
+import { EditPhotoDataDto } from './dto/editPhotoData.dto';
 
 @Controller('photo')
 export class PhotoController {
@@ -28,8 +31,15 @@ export class PhotoController {
   ) {}
 
   @Get()
-  getPhoto(): Promise<Photo[]> {
+  getPhotos(): Promise<Photo[]> {
     return this.photoService.findAll();
+  }
+
+  @Get(':id')
+  async getPhoto(@Param('id') id: number): Promise<Photo> {
+    const photo: Photo = await this.photoService.findOne(id);
+    //if (!photo.is_public) throw new NotFoundException();
+    return photo;
   }
 
   @Post()
@@ -56,6 +66,15 @@ export class PhotoController {
 
     const key = await this.s3Service.uploadFile(file);
     return this.photoService.createPhoto(key, parsedPhotoData);
+  }
+
+  @Patch(':id')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async editPhoto(
+    @Param('id') id: number,
+    @Body() photoData: EditPhotoDataDto,
+  ): Promise<Photo> {
+    return this.photoService.editPhotoData(id, photoData);
   }
 
   @Get('/link/:id')
