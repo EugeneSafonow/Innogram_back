@@ -13,9 +13,6 @@ export class Photo {
   @Column()
   description: string;
 
-  @Column()
-  image_url: string;
-
   @Column({ unique: true })
   key: string;
 
