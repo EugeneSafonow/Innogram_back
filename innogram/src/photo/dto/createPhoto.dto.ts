@@ -1,4 +1,11 @@
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreatePhotoDto {
   @IsString()
@@ -8,4 +15,8 @@ export class CreatePhotoDto {
 
   @IsBoolean()
   is_public: boolean;
+
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
 }
