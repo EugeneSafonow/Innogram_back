@@ -24,6 +24,8 @@ import { S3Service } from '../s3/s3.service';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
 import { EditPhotoDataDto } from './dto/editPhotoData.dto';
+import { JwtAuthGuard } from '../guards/jwtAuth.guard';
+import { GetPhotosDto } from './dto/getPhotos.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('photo')
@@ -34,13 +36,13 @@ export class PhotoController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
-  getPhotos(): Promise<Photo[]> {
-    return this.photoService.findAll();
+  @UseGuards(JwtAuthGuard)
+  getPhotos(@Body() getPhotosDto: GetPhotosDto): Promise<Photo[]> {
+    return this.photoService.findAll(getPhotosDto.userId);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   async getPhoto(@Req() req, @Param('id') id: number): Promise<Photo> {
     const photo: Photo = await this.photoService.findOne(id);
     if (!photo.is_public && photo.user.id !== req.user.id)
@@ -80,19 +82,12 @@ export class PhotoController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true })) //TODO CHECK USER
   async editPhoto(
     @Param('id') id: number,
-    @Req() req,
     @Body() photoData: EditPhotoDataDto,
   ): Promise<Photo> {
-    const photoEntity = await this.photoService.findOne(id);
-
-    if (!photoEntity || photoEntity.user.id !== req.user.id) {
-      throw new NotFoundException(`No photo with id ${id}`);
-    }
-
     return this.photoService.editPhotoData(id, photoData);
   }
 
@@ -106,39 +101,42 @@ export class PhotoController {
       throw new NotFoundException(`No photo with id ${id}`);
     }
 
-    if (photoEntity.is_public) {
-      const s3Respone = await this.s3Service.getFile(photoEntity.key);
-      res.setHeader('Content-Type', s3Respone.contentType);
-      s3Respone.stream.pipe(res);
-    } else {
+    if (!photoEntity.is_public) {
       throw new ForbiddenException('No permission to photo');
     }
+
+    const s3Respone = await this.s3Service.getFile(photoEntity.key);
+    res.setHeader('Content-Type', s3Respone.contentType);
+    s3Respone.stream.pipe(res);
   }
 
   @Get('/private/link/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   async getPhotoLinkViaAuth(
     @Param('id') id: number,
-    @Req() req,
     @Res() res: Response,
+    @Body() getPhotosDto: GetPhotosDto,
   ): Promise<void> {
     const photoEntity = await this.photoService.findOne(id);
     if (!photoEntity) {
       throw new NotFoundException(`No photo with id ${id}`);
     }
 
-    if (photoEntity.is_public && req.user.id === photoEntity.user.id) {
-      const s3Respone = await this.s3Service.getFile(photoEntity.key);
-      res.setHeader('Content-Type', s3Respone.contentType);
-      s3Respone.stream.pipe(res);
-    } else {
+    if (getPhotosDto.userId !== photoEntity.user.id) {
       throw new ForbiddenException('No permission to photo');
     }
+    const s3Respone = await this.s3Service.getFile(photoEntity.key);
+    res.setHeader('Content-Type', s3Respone.contentType);
+    s3Respone.stream.pipe(res);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
-  async deletePhoto(@Param('id') id: number): Promise<void> {
-    console.log(await this.photoService.deletePhoto(id));
+  @UseGuards(JwtAuthGuard)
+  async deletePhoto(
+    @Param('id') id: number,
+    @Body() getPhotosDto: GetPhotosDto,
+  ): Promise<void> {
+    // TODO STATUS CODE
+    await this.photoService.deletePhoto(id, getPhotosDto.userId);
   }
 }

@@ -15,4 +15,8 @@ export class EditPhotoDataDto {
 
   @IsBoolean()
   is_public: boolean;
+
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
 }
