@@ -4,28 +4,43 @@ import { Photo } from '../entities/photo.entity';
 import { CreatePhotoDto } from './dto/createPhoto.dto';
 import { S3Service } from '../s3/s3.service';
 import { EditPhotoDataDto } from './dto/editPhotoData.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class PhotoService {
   constructor(
     @Inject('PHOTO_REPOSITORY')
     private photoRepository: Repository<Photo>,
+    private userService: UserService,
     private s3Service: S3Service,
   ) {}
-  async findAll(): Promise<Photo[]> {
-    return this.photoRepository.find();
+  async findAll(userId: string): Promise<Photo[]> {
+    return this.photoRepository.find({ where: { user: { id: userId } } });
   }
+
   async findOne(id: number): Promise<Photo> {
-    return this.photoRepository.findOne({ where: { id: id } });
+    return this.photoRepository.findOne({
+      where: { id: id },
+      relations: ['user'],
+      select: {
+        user: { id: true },
+      },
+    });
   }
+
   async createPhoto(key: string, photo: CreatePhotoDto): Promise<Photo> {
-    const newPhoto = this.photoRepository.create(photo);
-    newPhoto.key = key;
+    const user = await this.userService.findOne(photo.userId);
+    if (!user) throw new NotFoundException(`No photo with id ${photo.userId}`);
+    const newPhoto = this.photoRepository.create({
+      ...photo,
+      key,
+      user: { id: user.id },
+    });
     return this.photoRepository.save(newPhoto);
   }
   async editPhotoData(id: number, photoData: EditPhotoDataDto): Promise<Photo> {
     const editedPhoto = await this.findOne(id);
-    if (!editedPhoto) {
+    if (!editedPhoto || editedPhoto.user.id !== photoData.userId) {
       throw new NotFoundException();
     }
     editedPhoto.description = photoData.description;
@@ -33,9 +48,9 @@ export class PhotoService {
     const respones = await this.photoRepository.save(editedPhoto);
     return respones;
   }
-  async deletePhoto(id: number): Promise<DeleteResult> {
+  async deletePhoto(id: number, userId: string): Promise<DeleteResult> {
     const photoEntity = await this.findOne(id);
-    if (!photoEntity) {
+    if (!photoEntity || photoEntity.user.id !== userId) {
       throw new NotFoundException(`No photo with id ${id}`);
     }
     await this.s3Service.deleteFile(photoEntity.key);

@@ -1,4 +1,11 @@
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class EditPhotoDataDto {
   @IsString()
@@ -8,4 +15,8 @@ export class EditPhotoDataDto {
 
   @IsBoolean()
   is_public: boolean;
+
+  @IsUUID()
+  @IsNotEmpty()
+  userId: string;
 }
