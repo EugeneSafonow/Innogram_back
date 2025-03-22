@@ -7,9 +7,10 @@ import { S3Service } from '../s3/s3.service';
 import { S3Module } from '../s3/s3.module';
 import { UserService } from '../user/user.service';
 import { UserModule } from '../user/user.module';
+import { TagModule } from '../tag/tag.module';
 
 @Module({
-  imports: [DatabaseModule, S3Module, UserModule],
+  imports: [DatabaseModule, S3Module, UserModule, TagModule],
   controllers: [PhotoController],
   providers: [...photoProviders, PhotoService, S3Service, UserService],
 })

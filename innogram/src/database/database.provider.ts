@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
+import { Tag } from '../entities/tag.entity';
 
 export const databaseProviders = [
   {
@@ -13,9 +14,8 @@ export const databaseProviders = [
         username: 'admin',
         password: '1234',
         database: 'db',
-        entities: [User, Photo],
-        synchronize: false,
-        migrations: ['src/migrations/*.ts'],
+        entities: [User, Photo, Tag],
+        synchronize: true,
       });
 
       return dataSource.initialize();

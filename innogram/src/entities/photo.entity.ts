@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  ManyToMany,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Tag } from './tag.entity';
 
 @Entity()
 export class Photo {
@@ -31,4 +33,7 @@ export class Photo {
   })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToMany(() => Tag, (tag) => tag.photos, { cascade: true })
+  tags: Tag[];
 }

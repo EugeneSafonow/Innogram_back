@@ -1,4 +1,6 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsOptional,
@@ -19,4 +21,10 @@ export class EditPhotoDataDto {
   @IsUUID()
   @IsNotEmpty()
   userId: string;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @IsOptional()
+  tags: string[];
 }
