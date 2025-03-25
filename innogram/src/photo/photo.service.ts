@@ -5,8 +5,8 @@ import { CreatePhotoDto } from './dto/createPhoto.dto';
 import { S3Service } from '../s3/s3.service';
 import { EditPhotoDataDto } from './dto/editPhotoData.dto';
 import { UserService } from '../user/user.service';
-import { Tag } from '../entities/tag.entity';
-import { TagService } from '../tag/tag.service.';
+import { KeyWord } from '../entities/keyWord.entity';
+import { KeyWordService } from '../keyWord/keyWordService';
 
 @Injectable()
 export class PhotoService {
@@ -15,7 +15,7 @@ export class PhotoService {
     private photoRepository: Repository<Photo>,
     private userService: UserService,
     private s3Service: S3Service,
-    private tagService: TagService,
+    private keyWordService: KeyWordService,
   ) {}
   async findAll(userId: string): Promise<Photo[]> {
     return this.photoRepository.find({ where: { user: { id: userId } } });
@@ -24,7 +24,7 @@ export class PhotoService {
   async findOne(id: number): Promise<Photo> {
     return this.photoRepository.findOne({
       where: { id: id },
-      relations: ['user', 'tags'],
+      relations: ['user', 'keyWords'],
       select: {
         user: { id: true },
       },
@@ -36,12 +36,13 @@ export class PhotoService {
 
     if (!user) throw new NotFoundException(`No photo with id ${photo.userId}`);
 
-    const tags: Tag[] = [];
+    const keyWords: KeyWord[] = [];
 
-    if (photo.tags && photo.tags.length > 0) {
-      for (const tagName of photo.tags) {
-        const tag = await this.tagService.findOrCreateTag(tagName);
-        tags.push(tag);
+    if (photo.keyWords && photo.keyWords.length > 0) {
+      for (const keyWordName of photo.keyWords) {
+        const keyWord =
+          await this.keyWordService.findOrCreateKeyWord(keyWordName);
+        keyWords.push(keyWord);
       }
     }
 
@@ -49,7 +50,7 @@ export class PhotoService {
       ...photo,
       key,
       user: { id: user.id },
-      tags,
+      keyWords,
     });
 
     return this.photoRepository.save(newPhoto);
@@ -64,10 +65,10 @@ export class PhotoService {
     editedPhoto.description = photoData.description;
     editedPhoto.is_public = photoData.is_public;
 
-    if (photoData.tags && photoData.tags.length > 0) {
-      editedPhoto.tags = await Promise.all(
-        photoData.tags.map(async (tagName) => {
-          return await this.tagService.findOrCreateTag(tagName);
+    if (photoData.keyWords && photoData.keyWords.length > 0) {
+      editedPhoto.keyWords = await Promise.all(
+        photoData.keyWords.map(async (keyWordName) => {
+          return await this.keyWordService.findOrCreateKeyWord(keyWordName);
         }),
       );
     }
@@ -81,6 +82,7 @@ export class PhotoService {
       throw new NotFoundException(`No photo with id ${id}`);
     }
     await this.s3Service.deleteFile(photoEntity.key);
-    return this.photoRepository.delete(photoEntity.id);
+    const result = await this.photoRepository.delete(photoEntity.id);
+    return result;
   }
 }

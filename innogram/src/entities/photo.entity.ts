@@ -8,12 +8,12 @@ import {
   ManyToMany,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Tag } from './tag.entity';
+import { KeyWord } from './keyWord.entity';
 
 @Entity()
 export class Photo {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number; //TODO TO UUID
 
   @Column()
   description: string;
@@ -34,6 +34,8 @@ export class Photo {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToMany(() => Tag, (tag) => tag.photos, { cascade: true })
-  tags: Tag[];
+  @ManyToMany(() => KeyWord, (keyWord) => keyWord.photos, {
+    onDelete: 'CASCADE',
+  })
+  keyWords: KeyWord[];
 }

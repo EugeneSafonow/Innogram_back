@@ -4,8 +4,11 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Photo } from './photo.entity';
+import { KeyWord } from './keyWord.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -31,6 +34,10 @@ export class User {
 
   @OneToMany(() => Photo, (photo) => photo.user, { eager: false })
   photos: Photo[];
+
+  @ManyToMany(() => KeyWord, (keyWord) => keyWord.users, { cascade: true })
+  @JoinTable()
+  interests: KeyWord[];
 
   @CreateDateColumn()
   created_at: Date;

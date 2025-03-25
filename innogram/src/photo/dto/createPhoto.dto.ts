@@ -26,5 +26,5 @@ export class CreatePhotoDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   @IsOptional()
-  tags: string[];
+  keyWords: string[];
 }

@@ -26,5 +26,5 @@ export class EditPhotoDataDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   @IsOptional()
-  tags: string[];
+  keyWords: string[];
 }
