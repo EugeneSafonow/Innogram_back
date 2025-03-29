@@ -2,5 +2,7 @@ export interface LoginStatusDto {
   username: string;
   email: string;
   accessToken: string;
-  expiresIn: any;
+  refreshToken: string;
+  expiresIn: number;
+  refreshTokenExpiresIn: number;
 }

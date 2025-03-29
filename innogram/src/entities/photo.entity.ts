@@ -5,13 +5,15 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  ManyToMany,
 } from 'typeorm';
 import { User } from './user.entity';
+import { KeyWord } from './keyWord.entity';
 
 @Entity()
 export class Photo {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number; //TODO TO UUID
 
   @Column()
   description: string;
@@ -31,4 +33,9 @@ export class Photo {
   })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @ManyToMany(() => KeyWord, (keyWord) => keyWord.photos, {
+    onDelete: 'CASCADE',
+  })
+  keyWords: KeyWord[];
 }

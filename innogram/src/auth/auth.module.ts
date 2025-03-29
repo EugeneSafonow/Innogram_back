@@ -7,10 +7,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
+import { KeyWordModule } from '../keyWord/keyWordModule';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     UserModule,
+    KeyWordModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
       property: 'user',
@@ -27,6 +30,12 @@ import { UserModule } from '../user/user.module';
       },
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 5,
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserService],

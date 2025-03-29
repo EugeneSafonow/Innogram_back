@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../user/dto/createUser.dto';
 import { LoginUserDto } from '../user/dto/loginUser.dto';
 import { LoginStatusDto } from './dto/loginStatus.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -15,24 +16,45 @@ export class AuthService {
     private configService: ConfigService,
     private jwtService: JwtService,
   ) {}
+
   async register(user: CreateUserDto): Promise<User> {
     return this.usersService.create(user);
   }
 
   async login(loginUser: LoginUserDto): Promise<LoginStatusDto> {
     const user = await this.usersService.findByLogin(loginUser);
-    const token = this._createToken(user);
+    const tokens = this._createTokens(user);
 
     return {
       username: user.username,
       email: user.email,
-      ...token,
+      ...tokens,
     };
   }
 
+  async refreshToken(refreshToken: string): Promise<LoginStatusDto> {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_KEY'),
+      });
+
+      const user = await this.usersService.findByPayload(payload);
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      return {
+        username: user.username,
+        email: user.email,
+        ...this._createTokens(user),
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
   async validate(payload: JwtPayloadDto): Promise<User> {
-    console.log('Validating payload:', payload);
-    const user = await this.usersService.findByPayload(payload); // TODO EXTEND FIND BY PAYLOAD
+    const user = await this.usersService.findByPayload(payload);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -41,14 +63,25 @@ export class AuthService {
     return user;
   }
 
-  private _createToken({ username, email }: User) {
-    const expiresIn = this.configService.get<string>('JWT_EXPIRES');
+  private _createTokens({ username, email }: User) {
     const user: JwtPayloadDto = { username, email };
-    const accessToken = this.jwtService.sign(user);
+    const accessToken = this.jwtService.sign(user, {
+      expiresIn: '15m',
+    });
+
+    const refreshToken = this.jwtService.sign(
+      { ...user, tokenId: randomBytes(16).toString('hex') },
+      {
+        expiresIn: '7d',
+        secret: this.configService.get<string>('JWT_REFRESH_KEY'),
+      },
+    );
 
     return {
       accessToken,
-      expiresIn,
+      refreshToken,
+      expiresIn: 60 * 15, // 15 minutes in seconds
+      refreshTokenExpiresIn: 60 * 60 * 24 * 7, // 7 days in seconds
     };
   }
 }
