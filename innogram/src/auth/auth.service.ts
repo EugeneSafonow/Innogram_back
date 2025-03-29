@@ -64,15 +64,20 @@ export class AuthService {
   }
 
   private _createTokens({ username, email }: User) {
+    const accessTokenExpiresIn = this.configService.get<string>('JWT_EXPIRES');
+    const refreshTokenExpiresIn = this.configService.get<string>(
+      'JWT_REFRESH_EXPIRES',
+    );
+
     const user: JwtPayloadDto = { username, email };
     const accessToken = this.jwtService.sign(user, {
-      expiresIn: '15m',
+      expiresIn: accessTokenExpiresIn,
     });
 
     const refreshToken = this.jwtService.sign(
       { ...user, tokenId: randomBytes(16).toString('hex') },
       {
-        expiresIn: '7d',
+        expiresIn: refreshTokenExpiresIn,
         secret: this.configService.get<string>('JWT_REFRESH_KEY'),
       },
     );
