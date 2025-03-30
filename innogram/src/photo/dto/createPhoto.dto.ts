@@ -11,7 +11,7 @@ import {
 
 export class CreatePhotoDto {
   @IsString()
-  @MaxLength(255)
+  @MaxLength(496)
   @IsOptional()
   description: string;
 

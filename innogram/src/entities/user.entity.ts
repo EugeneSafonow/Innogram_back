@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Photo } from './photo.entity';
 import { KeyWord } from './keyWord.entity';
+import { Like } from './like.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -34,6 +35,9 @@ export class User {
 
   @OneToMany(() => Photo, (photo) => photo.user, { eager: false })
   photos: Photo[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
 
   @ManyToMany(() => KeyWord, (keyWord) => keyWord.users, { cascade: true })
   @JoinTable()
