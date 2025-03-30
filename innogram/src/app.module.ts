@@ -1,20 +1,25 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PhotoModule } from './photo/photo.module';
 import { UserModule } from './user/user.module';
+import { PhotoModule } from './photo/photo.module';
+import { S3Module } from './s3/s3.module';
 import { AuthModule } from './auth/auth.module';
 import { KeyWordModule } from './keyWord/keyWordModule';
+import { LikeModule } from './like/like.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
     }),
-    PhotoModule,
+    DatabaseModule,
     UserModule,
+    PhotoModule,
+    S3Module,
     AuthModule,
     KeyWordModule,
+    LikeModule,
   ],
 })
 export class AppModule {}

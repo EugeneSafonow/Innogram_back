@@ -6,9 +6,11 @@ import {
   ManyToOne,
   JoinColumn,
   ManyToMany,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { KeyWord } from './keyWord.entity';
+import { Like } from './like.entity';
 
 @Entity()
 export class Photo {
@@ -38,4 +40,7 @@ export class Photo {
     onDelete: 'CASCADE',
   })
   keyWords: KeyWord[];
+
+  @OneToMany(() => Like, (like: Like) => like.photo)
+  likes: Like[];
 }
