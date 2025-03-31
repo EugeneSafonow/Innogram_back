@@ -1,14 +1,4 @@
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MinLength,
-} from 'class-validator';
-import { UserRole } from '../../entities/user.entity';
+import { IsNotEmpty, IsUUID, MinLength } from 'class-validator';
 
 export class ChangePasswordDto {
   @IsUUID()

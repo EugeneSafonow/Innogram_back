@@ -6,6 +6,7 @@ import { S3Module } from './s3/s3.module';
 import { AuthModule } from './auth/auth.module';
 import { KeyWordModule } from './keyWord/keyWordModule';
 import { LikeModule } from './like/like.module';
+import { CommentModule } from './comment/comment.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { DatabaseModule } from './database/database.module';
     AuthModule,
     KeyWordModule,
     LikeModule,
+    CommentModule,
   ],
 })
 export class AppModule {}

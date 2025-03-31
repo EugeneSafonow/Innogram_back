@@ -11,6 +11,7 @@ import {
 import { User } from './user.entity';
 import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
+import { Comment } from './comment.entity';
 
 @Entity()
 export class Photo {
@@ -43,4 +44,7 @@ export class Photo {
 
   @OneToMany(() => Like, (like: Like) => like.photo)
   likes: Like[];
+
+  @OneToMany(() => Comment, (comment) => comment.photo)
+  comments: Comment[];
 }
