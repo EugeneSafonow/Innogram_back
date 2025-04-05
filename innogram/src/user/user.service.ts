@@ -14,6 +14,7 @@ import { LoginUserDto } from './dto/loginUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { KeyWordService } from '../keyWord/keyWordService';
 import { ChangePasswordDto } from './dto/changePassword.dto';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class UserService {
@@ -21,6 +22,7 @@ export class UserService {
     @Inject('USER_REPOSITORY')
     private userRepository: Repository<User>,
     private readonly keyWordService: KeyWordService,
+    private s3Service: S3Service,
   ) {}
 
   async findByLogin({
@@ -70,19 +72,38 @@ export class UserService {
     });
   }
 
-  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(updateUserDto.userId);
+  async updateUser(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (updateUserDto.avatar) {
+      if (user.avatarKey) {
+        await this.s3Service.deleteFile(user.avatarKey);
+      }
+      const avatarKey = await this.s3Service.uploadFile(updateUserDto.avatar);
+      user.avatarKey = avatarKey;
+    }
 
     if (updateUserDto.username) {
       const existingUser = await this.userRepository.findOne({
         where: { username: updateUserDto.username },
       });
 
-      if (existingUser && existingUser.id !== updateUserDto.userId) {
+      if (existingUser && existingUser.id !== userId) {
         throw new BadRequestException('Username already taken');
       }
 
       user.username = updateUserDto.username;
+    }
+
+    if (updateUserDto.email) {
+      user.email = updateUserDto.email;
     }
 
     if (updateUserDto.role) {
@@ -97,6 +118,8 @@ export class UserService {
       );
 
       user.interests = keyWords;
+    } else {
+      user.interests = [];
     }
 
     return this.userRepository.save(user);
