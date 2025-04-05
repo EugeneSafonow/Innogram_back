@@ -7,9 +7,11 @@ import {
   Body,
   UseGuards,
   Req,
+  Patch,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/updateComment.dto';
 import { JwtAuthGuard } from 'src/guards/jwtAuth.guard';
 import { RequestWithUser } from 'src/types/request.types';
 
@@ -35,5 +37,14 @@ export class CommentController {
   @Delete(':commentId')
   remove(@Req() req: RequestWithUser, @Param('commentId') commentId: number) {
     return this.commentService.remove(req.user.id, commentId);
+  }
+
+  @Patch(':id')
+  updateComment(
+    @Param('id') id: string,
+    @Req() req,
+    @Body() updateCommentDto: UpdateCommentDto
+  ) {
+    return this.commentService.updateComment(+id, req.user.id, updateCommentDto);
   }
 }

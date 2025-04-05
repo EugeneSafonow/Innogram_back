@@ -4,6 +4,7 @@ import { Comment } from '../entities/comment.entity';
 import { User } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/updateComment.dto';
 
 @Injectable()
 export class CommentService {
@@ -63,5 +64,23 @@ export class CommentService {
     }
 
     await this.commentRepository.remove(comment);
+  }
+
+  async updateComment(commentId: number, userId: string, updateCommentDto: UpdateCommentDto): Promise<Comment> {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+      relations: ['user']
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.user.id !== userId) {
+      throw new NotFoundException('You can only update your own comments');
+    }
+
+    comment.text = updateCommentDto.text;
+    return this.commentRepository.save(comment);
   }
 }
