@@ -15,6 +15,7 @@ import {
   UseInterceptors,
   UsePipes,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { Photo } from '../entities/photo.entity';
 import { PhotoService } from './photo.service';
@@ -27,6 +28,7 @@ import { EditPhotoDataDto } from './dto/editPhotoData.dto';
 import { JwtAuthGuard } from '../guards/jwtAuth.guard';
 import { GetPhotosDto } from './dto/getPhotos.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
 
 @Controller('photo')
 export class PhotoController {
@@ -39,6 +41,12 @@ export class PhotoController {
   @UseGuards(JwtAuthGuard)
   getPhotos(@Body() getPhotosDto: GetPhotosDto): Promise<Photo[]> {
     return this.photoService.findAll(getPhotosDto.userId);
+  }
+
+  @Get('recommended')
+  @UseGuards(JwtAuthGuard)
+  getRecommendedPhotos(@Req() req, @Query() dto: GetRecommendedPhotosDto) {
+    return this.photoService.getRecommendedPhotos(req.user.id, dto);
   }
 
   @Get(':id')

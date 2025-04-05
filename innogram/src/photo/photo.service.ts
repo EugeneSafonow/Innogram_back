@@ -7,6 +7,8 @@ import { EditPhotoDataDto } from './dto/editPhotoData.dto';
 import { UserService } from '../user/user.service';
 import { KeyWord } from '../entities/keyWord.entity';
 import { KeyWordService } from '../keyWord/keyWordService';
+import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PhotoService {
@@ -84,5 +86,37 @@ export class PhotoService {
     await this.s3Service.deleteFile(photoEntity.key);
     const result = await this.photoRepository.delete(photoEntity.id);
     return result;
+  }
+
+  async getRecommendedPhotos(userId: string, dto: GetRecommendedPhotosDto) {
+    const { page = 1, limit = 10 } = dto;
+    const skip = (page - 1) * limit;
+
+    const [photos, total] = await this.photoRepository
+      .createQueryBuilder('photo')
+      .leftJoinAndSelect('photo.user', 'user')
+      .leftJoinAndSelect('photo.likes', 'likes')
+      .select([
+        'photo.id',
+        'photo.description',
+        'photo.is_public',
+        'photo.key',
+        'photo.createdAt',
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'likes.id',
+        'likes.user',
+      ])
+      .where('photo.is_public = true')
+      .orderBy('photo.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      photos,
+      hasMore: skip + photos.length < total,
+    };
   }
 }
