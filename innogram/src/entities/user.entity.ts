@@ -10,6 +10,7 @@ import {
 import { Photo } from './photo.entity';
 import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
+import { Comment } from './comment.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -42,6 +43,9 @@ export class User {
   @ManyToMany(() => KeyWord, (keyWord) => keyWord.users, { cascade: true })
   @JoinTable()
   interests: KeyWord[];
+
+  @OneToMany(() => Comment, (comment) => comment.user)
+  comments: Comment[];
 
   @CreateDateColumn()
   created_at: Date;

@@ -1,11 +1,11 @@
-import { Like } from '../entities/like.entity';
+import { Comment } from '../entities/comment.entity';
 import { User } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
 
-export const likeProviders = [
+export const commentProviders = [
   {
-    provide: 'LIKE_REPOSITORY',
-    useFactory: (dataSource) => dataSource.getRepository(Like),
+    provide: 'COMMENT_REPOSITORY',
+    useFactory: (dataSource) => dataSource.getRepository(Comment),
     inject: ['DATA_SOURCE'],
   },
   {
