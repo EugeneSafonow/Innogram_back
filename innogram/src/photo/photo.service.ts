@@ -28,7 +28,7 @@ export class PhotoService {
       where: { id: id },
       relations: ['user', 'keyWords'],
       select: {
-        user: { id: true },
+        user: { id: true, username: true, avatarKey: true },
       },
     });
   }
@@ -109,7 +109,7 @@ export class PhotoService {
         'likes.user',
       ])
       .where('photo.is_public = true')
-      .orderBy('photo.createdAt', 'DESC')
+      .orderBy('photo.createdAt')
       .skip(skip)
       .take(limit)
       .getManyAndCount();

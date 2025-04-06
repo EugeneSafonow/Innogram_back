@@ -12,6 +12,7 @@ import { User } from './user.entity';
 import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
+import { Favorite } from './favorite.entity';
 
 @Entity()
 export class Photo {
@@ -47,4 +48,7 @@ export class Photo {
 
   @OneToMany(() => Comment, (comment) => comment.photo)
   comments: Comment[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.photo)
+  favorites: Favorite[];
 }

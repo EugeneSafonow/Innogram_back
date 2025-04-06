@@ -24,7 +24,7 @@ export class LikeService {
   async create(userId: string, createLikeDto: CreateLikeDto): Promise<Like> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
-    if (!user) {
+    if (!user || !userId) {
       throw new NotFoundException('User is not found');
     }
 

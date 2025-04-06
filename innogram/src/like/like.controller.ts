@@ -20,6 +20,7 @@ export class LikeController {
 
   @Post()
   create(@Req() req: RequestWithUser, @Body() createLikeDto: CreateLikeDto) {
+    console.log(req.user.id);
     return this.likeService.create(req.user.id, createLikeDto);
   }
 
