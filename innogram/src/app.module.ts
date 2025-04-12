@@ -8,6 +8,7 @@ import { KeyWordModule } from './keyWord/keyWordModule';
 import { LikeModule } from './like/like.module';
 import { CommentModule } from './comment/comment.module';
 import { DatabaseModule } from './database/database.module';
+import { FavoriteModule } from './favorite/favorite.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DatabaseModule } from './database/database.module';
     KeyWordModule,
     LikeModule,
     CommentModule,
+    FavoriteModule,
   ],
 })
 export class AppModule {}

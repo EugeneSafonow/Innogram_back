@@ -4,6 +4,7 @@ import { Photo } from '../entities/photo.entity';
 import { KeyWord } from '../entities/keyWord.entity';
 import { Like } from 'src/entities/like.entity';
 import { Comment } from '../entities/comment.entity';
+import { Favorite } from '../entities/favorite.entity';
 
 export const databaseProviders = [
   {
@@ -16,7 +17,7 @@ export const databaseProviders = [
         username: 'admin',
         password: '1234',
         database: 'db',
-        entities: [User, Photo, KeyWord, Like, Comment],
+        entities: [User, Photo, KeyWord, Like, Comment, Favorite],
         synchronize: true,
       });
 

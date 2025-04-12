@@ -11,6 +11,7 @@ import { Photo } from './photo.entity';
 import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
+import { Favorite } from './favorite.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -31,6 +32,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  avatarKey: string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
@@ -46,6 +50,9 @@ export class User {
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments: Comment[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.user)
+  favorites: Favorite[];
 
   @CreateDateColumn()
   created_at: Date;

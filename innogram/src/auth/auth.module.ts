@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
 import { KeyWordModule } from '../keyWord/keyWordModule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
         limit: 5,
       },
     ]),
+    S3Module
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserService],

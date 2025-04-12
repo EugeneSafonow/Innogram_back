@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MinLength,
 } from 'class-validator';
 import { UserRole } from '../../entities/user.entity';
 
@@ -14,7 +15,17 @@ export class UpdateUserDto {
   userId: string;
 
   @IsNotEmpty({ message: 'Username is required' })
+  @IsString()
+  @MinLength(3)
   username: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  email?: string;
+
+  @IsOptional()
+  avatar?: Express.Multer.File;
 
   @IsArray()
   @IsString({ each: true })

@@ -8,6 +8,11 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
+  Post,
+  Request,
+  UseInterceptors,
+  UploadedFile,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/updateUser.dto';
@@ -15,6 +20,7 @@ import { JwtAuthGuard } from '../guards/jwtAuth.guard';
 import { ChangePasswordDto } from './dto/changePassword.dto';
 import { UserPayloadDto } from './dto/userPayloadDto.dto';
 import { GetUserdDto } from './dto/getUser.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -37,15 +43,6 @@ export class UserController {
     return result;
   }
 
-  @Patch('update')
-  @UsePipes(new ValidationPipe())
-  async updateUser(
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<UserPayloadDto> {
-    const { password, ...result } =
-      await this.userService.updateUser(updateUserDto);
-    return result;
-  }
 
   @Patch('changePassword')
   @UsePipes(new ValidationPipe())
@@ -53,5 +50,19 @@ export class UserController {
     @Body() changePasswordDto: ChangePasswordDto,
   ): Promise<UserPayloadDto> {
     return await this.userService.changePassword(changePasswordDto);
+  }
+
+  @Patch('update')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar'))
+  updateUser(
+    @Req() req,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() avatar?: Express.Multer.File
+  ) {
+    return this.userService.updateUser(req.user.id, {
+      ...updateUserDto,
+      avatar
+    });
   }
 }

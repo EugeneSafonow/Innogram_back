@@ -12,6 +12,7 @@ import { User } from './user.entity';
 import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
+import { Favorite } from './favorite.entity';
 
 @Entity()
 export class Photo {
@@ -42,9 +43,19 @@ export class Photo {
   })
   keyWords: KeyWord[];
 
-  @OneToMany(() => Like, (like: Like) => like.photo)
+  @OneToMany(() => Like, (like: Like) => like.photo, {
+    onDelete: 'CASCADE',
+  })
   likes: Like[];
 
-  @OneToMany(() => Comment, (comment) => comment.photo)
+  @OneToMany(() => Comment, (comment) => comment.photo, {
+    onDelete: 'CASCADE',
+  })
   comments: Comment[];
+
+  @OneToMany(() => Favorite, (favorite) => favorite.photo, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  favorites: Favorite[];
 }

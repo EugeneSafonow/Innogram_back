@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { S3Client } from '@aws-sdk/client-s3';
 import { S3Service } from './s3.service';
 
@@ -25,4 +25,10 @@ import { S3Service } from './s3.service';
   ],
   exports: ['S3_CLIENT', S3Service],
 })
-export class S3Module {}
+export class S3Module implements OnModuleInit {
+  constructor(private readonly s3Service: S3Service) {}
+
+  async onModuleInit() {
+    await this.s3Service.initialize();
+  }
+}

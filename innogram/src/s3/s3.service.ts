@@ -21,7 +21,11 @@ export class S3Service {
     private configService: ConfigService,
   ) {
     this.bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME');
-    this.ensureBucketExists();
+  }
+
+  async initialize() {
+    await this.ensureBucketExists();
+    console.log('S3 initialized');
   }
 
   private async ensureBucketExists() {
