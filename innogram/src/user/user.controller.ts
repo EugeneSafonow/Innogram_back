@@ -1,15 +1,12 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Param,
   Patch,
   UseGuards,
   UsePipes,
   ValidationPipe,
-  Post,
-  Request,
   UseInterceptors,
   UploadedFile,
   Req,
@@ -43,7 +40,6 @@ export class UserController {
     return result;
   }
 
-
   @Patch('changePassword')
   @UsePipes(new ValidationPipe())
   async changePassword(
@@ -58,11 +54,11 @@ export class UserController {
   updateUser(
     @Req() req,
     @Body() updateUserDto: UpdateUserDto,
-    @UploadedFile() avatar?: Express.Multer.File
+    @UploadedFile() avatar?: Express.Multer.File,
   ) {
     return this.userService.updateUser(req.user.id, {
       ...updateUserDto,
-      avatar
+      avatar,
     });
   }
 }

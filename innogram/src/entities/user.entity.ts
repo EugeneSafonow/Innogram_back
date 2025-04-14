@@ -12,6 +12,7 @@ import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
 import { Favorite } from './favorite.entity';
+import { Collection } from './collection.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -53,6 +54,9 @@ export class User {
 
   @OneToMany(() => Favorite, (favorite) => favorite.user)
   favorites: Favorite[];
+
+  @OneToMany(() => Collection, (collection) => collection.user)
+  collections: Collection[];
 
   @CreateDateColumn()
   created_at: Date;
