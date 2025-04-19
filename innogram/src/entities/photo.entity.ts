@@ -13,6 +13,7 @@ import { KeyWord } from './keyWord.entity';
 import { Like } from './like.entity';
 import { Comment } from './comment.entity';
 import { Favorite } from './favorite.entity';
+import { Collection } from './collection.entity';
 
 @Entity()
 export class Photo {
@@ -58,4 +59,9 @@ export class Photo {
     onDelete: 'CASCADE',
   })
   favorites: Favorite[];
+
+  @ManyToMany(() => Collection, (collection) => collection.photos, {
+    onDelete: 'CASCADE',
+  })
+  collections: Collection[];
 }
