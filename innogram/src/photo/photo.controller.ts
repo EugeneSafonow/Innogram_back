@@ -147,4 +147,10 @@ export class PhotoController {
     // TODO STATUS CODE
     await this.photoService.deletePhoto(id, getPhotosDto.userId);
   }
+
+  @Get('user/:id')
+  @UseGuards(JwtAuthGuard)
+  getUserPhotos(@Param('id') userId: string): Promise<Photo[]> {
+    return this.photoService.findAll(userId);
+  }
 }

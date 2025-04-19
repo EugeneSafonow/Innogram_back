@@ -142,4 +142,25 @@ export class CollectionService {
     collection.photoOrder = photoOrder;
     return this.collectionRepository.save(collection);
   }
+
+  async findUserCollections(userId: string) {
+    const collections = await this.collectionRepository.find({
+      where: { 
+        user: { id: userId },
+        isPublic: true
+      },
+      relations: ['photos'],
+    });
+
+    return collections.map((collection) => {
+      if (collection.photoOrder) {
+        collection.photos.sort((a, b) => {
+          const orderA = collection.photoOrder[a.id] || 0;
+          const orderB = collection.photoOrder[b.id] || 0;
+          return orderA - orderB;
+        });
+      }
+      return collection;
+    });
+  }
 }

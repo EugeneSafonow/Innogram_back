@@ -81,4 +81,10 @@ export class CollectionController {
       req.user.id,
     );
   }
+
+  @Get('user/:id')
+  @UseGuards(JwtAuthGuard)
+  findUserCollections(@Param('id') userId: string) {
+    return this.collectionService.findUserCollections(userId);
+  }
 }
