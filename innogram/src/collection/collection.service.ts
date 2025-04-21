@@ -163,4 +163,65 @@ export class CollectionService {
       return collection;
     });
   }
+
+  async findAllPaginated(userId: string, page: number = 1, limit: number = 6) {
+    const skip = (page - 1) * limit;
+
+    const [collections, total] = await this.collectionRepository
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.photos', 'photos')
+      .where({user: { id: userId },
+        isPublic: true})
+      .orderBy('collection.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    // Сортировка фотографий по порядку
+    const sortedCollections = collections.map((collection) => {
+      if (collection.photoOrder) {
+        collection.photos.sort((a, b) => {
+          const orderA = collection.photoOrder[a.id] || 0;
+          const orderB = collection.photoOrder[b.id] || 0;
+          return orderA - orderB;
+        });
+      }
+      return collection;
+    });
+
+    return {
+      collections: sortedCollections,
+      hasMore: skip + collections.length < total,
+    };
+  }
+
+  async findUserCollectionsPaginated(userId: string, page: number = 1, limit: number = 6) {
+    const skip = (page - 1) * limit;
+
+    const [collections, total] = await this.collectionRepository
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.photos', 'photos')
+      .where('collection.user.id = :userId', { userId })
+      .andWhere('collection.isPublic = :isPublic', { isPublic: true })
+      .orderBy('collection.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const sortedCollections = collections.map((collection) => {
+      if (collection.photoOrder) {
+        collection.photos.sort((a, b) => {
+          const orderA = collection.photoOrder[a.id] || 0;
+          const orderB = collection.photoOrder[b.id] || 0;
+          return orderA - orderB;
+        });
+      }
+      return collection;
+    });
+
+    return {
+      collections: sortedCollections,
+      hasMore: skip + collections.length < total,
+    };
+  }
 }

@@ -16,6 +16,7 @@ import {
   UsePipes,
   ValidationPipe,
   Query,
+  Request,
 } from '@nestjs/common';
 import { Photo } from '../entities/photo.entity';
 import { PhotoService } from './photo.service';
@@ -47,6 +48,16 @@ export class PhotoController {
   @UseGuards(JwtAuthGuard)
   getRecommendedPhotos(@Req() req, @Query() dto: GetRecommendedPhotosDto) {
     return this.photoService.getRecommendedPhotos(req.user.id, dto);
+  }
+
+  @Get('private')
+  @UseGuards(JwtAuthGuard)
+  async getUserPrivatePhotos(
+    @Request() req, 
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return this.photoService.getUserPrivatePhotos(req.user.id, page, limit);
   }
 
   @Get(':id')
@@ -97,6 +108,21 @@ export class PhotoController {
     @Body() photoData: EditPhotoDataDto,
   ): Promise<Photo> {
     return this.photoService.editPhotoData(id, photoData);
+  }
+
+  @Patch(':id/privacy')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updatePhotoPrivacy(
+    @Param('id') id: number,
+    @Body() data: { is_public: boolean },
+    @Req() req,
+  ): Promise<Photo> {
+    return this.photoService.updatePhotoPrivacy(
+      id,
+      data.is_public,
+      req.user.id,
+    );
   }
 
   @Get('/link/:id')
@@ -150,7 +176,11 @@ export class PhotoController {
 
   @Get('user/:id')
   @UseGuards(JwtAuthGuard)
-  getUserPhotos(@Param('id') userId: string): Promise<Photo[]> {
-    return this.photoService.findAll(userId);
+  getUserPhotos(
+    @Param('id') userId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    return this.photoService.findAllPaginated(userId, page, limit);
   }
 }
