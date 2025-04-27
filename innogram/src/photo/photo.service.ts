@@ -23,6 +23,38 @@ export class PhotoService {
     return this.photoRepository.find({ where: { user: { id: userId } } });
   }
 
+  async findAllPaginated(userId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    console.log(userId);
+
+    const [photos, total] = await this.photoRepository
+      .createQueryBuilder('photo')
+      .leftJoinAndSelect('photo.user', 'user')
+      .leftJoinAndSelect('photo.keyWords', 'keyWords')
+      .select([
+        'photo.id',
+        'photo.description',
+        'photo.is_public',
+        'photo.key',
+        'photo.createdAt',
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'keyWords',
+      ])
+      .where('user.id = :userId', { userId })
+      .andWhere('photo.is_public = :isPublic', { isPublic: true })
+      .orderBy('photo.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      photos,
+      hasMore: skip + photos.length < total,
+    };
+  }
+
   async findOne(id: number): Promise<Photo> {
     return this.photoRepository.findOne({
       where: { id: id },
@@ -110,6 +142,52 @@ export class PhotoService {
       ])
       .where('photo.is_public = true')
       .orderBy('photo.createdAt')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      photos,
+      hasMore: skip + photos.length < total,
+    };
+  }
+
+  async updatePhotoPrivacy(
+    id: number,
+    isPublic: boolean,
+    userId: string,
+  ): Promise<Photo> {
+    const photo = await this.findOne(id);
+
+    if (!photo || photo.user.id !== userId) {
+      throw new NotFoundException(
+        `No photo with id ${id} found or you don't have permission`,
+      );
+    }
+
+    photo.is_public = isPublic;
+
+    return this.photoRepository.save(photo);
+  }
+
+  async getUserPrivatePhotos(userId: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+
+    const [photos, total] = await this.photoRepository
+      .createQueryBuilder('photo')
+      .leftJoinAndSelect('photo.user', 'user')
+      .select([
+        'photo.id',
+        'photo.description',
+        'photo.key',
+        'photo.createdAt',
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+      ])
+      .where('photo.is_public = false')
+      .andWhere('user.id = :userId', { userId })
+      .orderBy('photo.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();

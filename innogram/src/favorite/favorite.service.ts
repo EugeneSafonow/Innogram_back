@@ -63,6 +63,25 @@ export class FavoriteService {
         })
     }
 
+    async getUserFavoritesPaginated(userId: string, page: number = 1, limit: number = 10) {
+        const skip = (page - 1) * limit;
+
+        const [favorites, total] = await this.favoriteRepository
+            .createQueryBuilder('favorite')
+            .leftJoinAndSelect('favorite.photo', 'photo')
+            .leftJoinAndSelect('photo.user', 'user')
+            .where('favorite.user.id = :userId', { userId })
+            .orderBy('favorite.createdAt', 'DESC')
+            .skip(skip)
+            .take(limit)
+            .getManyAndCount();
+
+        return {
+            favorites,
+            hasMore: skip + favorites.length < total,
+        };
+    }
+
     async isPhotoInFavorites(userId: string, photoId: number): Promise<boolean> {
         const favorite = await this.favoriteRepository.findOne({
             where: {

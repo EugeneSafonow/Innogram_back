@@ -26,7 +26,14 @@ export class CollectionController {
   }
 
   @Get()
-  findAll(@Req() req) {
+  findAll(
+    @Req() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    if (page !== undefined && limit !== undefined) {
+      return this.collectionService.findAllPaginated(req.user.id, page, limit);
+    }
     return this.collectionService.findAll(req.user.id);
   }
 
@@ -84,7 +91,33 @@ export class CollectionController {
 
   @Get('user/:id')
   @UseGuards(JwtAuthGuard)
-  findUserCollections(@Param('id') userId: string) {
+  findUserCollections(
+    @Param('id') userId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    if (page !== undefined && limit !== undefined) {
+      return this.collectionService.findUserCollectionsPaginated(
+        userId,
+        page,
+        limit,
+      );
+    }
     return this.collectionService.findUserCollections(userId);
+  }
+
+  @Get('paginated')
+  @UseGuards(JwtAuthGuard)
+  async getAllPaginated(
+    @Req() req,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ) {
+    return this.collectionService.findAllPaginated(req.user.id, page, limit);
+  }
+
+  @Patch(':id/toggle-visibility')
+  toggleVisibility(@Req() req, @Param('id') id: string) {
+    return this.collectionService.toggleVisibility(id, req.user.id);
   }
 }

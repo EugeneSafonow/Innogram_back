@@ -10,6 +10,7 @@ import { CommentModule } from './comment/comment.module';
 import { DatabaseModule } from './database/database.module';
 import { FavoriteModule } from './favorite/favorite.module';
 import { CollectionModule } from './collection/collection.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CollectionModule } from './collection/collection.module';
     CommentModule,
     FavoriteModule,
     CollectionModule,
+    SeedModule,
   ],
 })
 export class AppModule {}

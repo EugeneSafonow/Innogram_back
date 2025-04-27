@@ -103,8 +103,9 @@ export class CollectionService {
 
   async removePhoto(collectionId: string, photoId: number, userId: string) {
     const collection = await this.findOne(collectionId, userId);
+
     collection.photos = collection.photos.filter(
-      (photo) => photo.id !== photoId,
+      (photo) => photo.id != photoId,
     );
 
     // Update photo order
@@ -145,9 +146,9 @@ export class CollectionService {
 
   async findUserCollections(userId: string) {
     const collections = await this.collectionRepository.find({
-      where: { 
+      where: {
         user: { id: userId },
-        isPublic: true
+        isPublic: true,
       },
       relations: ['photos'],
     });
@@ -162,5 +163,80 @@ export class CollectionService {
       }
       return collection;
     });
+  }
+
+  async findAllPaginated(userId: string, page: number = 1, limit: number = 6) {
+    const skip = (page - 1) * limit;
+
+    const [collections, total] = await this.collectionRepository
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.photos', 'photos')
+      .where({ user: { id: userId } })
+      .orderBy('collection.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const sortedCollections = collections.map((collection) => {
+      if (collection.photoOrder) {
+        collection.photos.sort((a, b) => {
+          const orderA = collection.photoOrder[a.id] || 0;
+          const orderB = collection.photoOrder[b.id] || 0;
+          return orderA - orderB;
+        });
+      }
+      return collection;
+    });
+
+    return {
+      collections: sortedCollections,
+      hasMore: skip + collections.length < total,
+    };
+  }
+
+  async findUserCollectionsPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 6,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const [collections, total] = await this.collectionRepository
+      .createQueryBuilder('collection')
+      .leftJoinAndSelect('collection.photos', 'photos')
+      .where('collection.user.id = :userId', { userId })
+      .andWhere('collection.isPublic = :isPublic', { isPublic: true })
+      .orderBy('collection.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const sortedCollections = collections.map((collection) => {
+      if (collection.photoOrder) {
+        collection.photos.sort((a, b) => {
+          const orderA = collection.photoOrder[a.id] || 0;
+          const orderB = collection.photoOrder[b.id] || 0;
+          return orderA - orderB;
+        });
+      }
+      return collection;
+    });
+
+    return {
+      collections: sortedCollections,
+      hasMore: skip + collections.length < total,
+    };
+  }
+
+  async toggleVisibility(id: string, userId: string) {
+    const collection = await this.findOne(id, userId);
+
+    if (!collection) {
+      throw new NotFoundException('Collection not found');
+    }
+
+    collection.isPublic = !collection.isPublic;
+
+    return this.collectionRepository.save(collection);
   }
 }
