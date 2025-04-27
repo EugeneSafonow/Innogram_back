@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   Body,
+  Query,
 } from '@nestjs/common';
 
 import { FavoriteService } from './favorite.service';
@@ -29,7 +30,14 @@ export class FavoriteController {
   }
 
   @Get()
-  async getUserFavorites(@Request() req) {
+  async getUserFavorites(
+    @Request() req,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    if (page !== undefined || limit !== undefined) {
+      return this.favoriteService.getUserFavoritesPaginated(req.user.id, page, limit);
+    }
     return this.favoriteService.getUserFavorites(req.user.id);
   }
 
