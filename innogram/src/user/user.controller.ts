@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/updateUser.dto';
@@ -38,6 +39,19 @@ export class UserController {
   async getUser(@Param('id') id: string): Promise<UserPayloadDto> {
     const { password, ...result } = await this.userService.findOne(id);
     return result;
+  }
+
+  @Get('search/users')
+  async searchUsers(
+    @Query('term') searchTerm: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ) {
+    if (!searchTerm || searchTerm.trim() === '') {
+      return { users: [], hasMore: false, total: 0 };
+    }
+    
+    return this.userService.searchUsers(searchTerm, page, limit);
   }
 
   @Patch('changePassword')

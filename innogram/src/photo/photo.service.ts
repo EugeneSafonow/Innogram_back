@@ -197,4 +197,39 @@ export class PhotoService {
       hasMore: skip + photos.length < total,
     };
   }
+
+  async searchPhotosByKeywords(searchTerm: string, page: number = 1, limit: number = 12) {
+    const skip = (page - 1) * limit;
+    const term = `%${searchTerm.toLowerCase()}%`;
+
+    const [photos, total] = await this.photoRepository
+      .createQueryBuilder('photo')
+      .leftJoinAndSelect('photo.user', 'user')
+      .leftJoinAndSelect('photo.keyWords', 'keyWords')
+      .select([
+        'photo.id',
+        'photo.description',
+        'photo.is_public',
+        'photo.key',
+        'photo.createdAt',
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'keyWords',
+      ])
+      .where('photo.is_public = true')
+      .andWhere(
+        '(LOWER(photo.description) LIKE :term OR LOWER(keyWords.name) LIKE :term)',
+        { term }
+      )
+      .orderBy('photo.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      photos,
+      hasMore: skip + photos.length < total,
+    };
+  }
 }

@@ -143,4 +143,29 @@ export class UserService {
 
     return this.userRepository.save(user);
   }
+
+  async searchUsers(searchTerm: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const term = `%${searchTerm.toLowerCase()}%`;
+
+    const [users, total] = await this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'user.role',
+      ])
+      .where('LOWER(user.username) LIKE :term', { term })
+      .orderBy('user.username', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      users,
+      hasMore: skip + users.length < total,
+      total
+    };
+  }
 }
