@@ -127,7 +127,6 @@ export class SeedService implements OnModuleInit {
     const users: User[] = [];
     const totalUsers = 10;
     
-    // Создаем админа
     const admin = new User();
     admin.email = 'admin@innogram.com';
     admin.username = 'admin';
@@ -135,13 +134,11 @@ export class SeedService implements OnModuleInit {
     admin.role = UserRole.ADMIN;
     admin.interests = faker.helpers.arrayElements(keywords, faker.number.int({ min: 2, max: 5 }));
     
-    // Загрузка аватара для админа
     const adminAvatarUrl = 'https://i.pravatar.cc/500?img=1';
     admin.avatarKey = await this.downloadAndUploadImage(adminAvatarUrl);
     
     users.push(await this.userRepository.save(admin));
     
-    // Создаем обычных пользователей
     for (let i = 0; i < totalUsers - 1; i++) {
       const user = new User();
       user.email = faker.internet.email().toLowerCase();
@@ -150,8 +147,7 @@ export class SeedService implements OnModuleInit {
       user.role = UserRole.USER;
       user.interests = faker.helpers.arrayElements(keywords, faker.number.int({ min: 1, max: 7 }));
       
-      // Загрузка случайного аватара
-      const avatarId = i + 2; // Начинаем с 2, т.к. 1 уже использован для админа
+      const avatarId = i + 2;
       const avatarUrl = `https://i.pravatar.cc/500?img=${avatarId}`;
       user.avatarKey = await this.downloadAndUploadImage(avatarUrl);
       
@@ -187,16 +183,14 @@ export class SeedService implements OnModuleInit {
       for (let i = 0; i < userPhotosCount; i++) {
         const photo = new Photo();
         photo.description = faker.lorem.sentence();
-        photo.is_public = faker.datatype.boolean(0.8); // 80% фото публичные
+        photo.is_public = faker.datatype.boolean(0.8); 
         photo.user = user;
         
-        // Выбираем случайные ключевые слова
         photo.keyWords = faker.helpers.arrayElements(
           keywords, 
           faker.number.int({ min: 1, max: 4 })
         );
         
-        // Используем заранее подготовленные URL изображений
         const imageUrl = faker.helpers.arrayElement(imageUrls);
         
         try {
@@ -204,7 +198,6 @@ export class SeedService implements OnModuleInit {
           photos.push(await this.photoRepository.save(photo));
         } catch (error) {
           console.error(`Failed to download/upload image: ${error.message}`);
-          // Пропускаем это фото и продолжаем
         }
       }
     }
@@ -215,7 +208,7 @@ export class SeedService implements OnModuleInit {
 
   private async createCollections(users: User[], photos: Photo[]): Promise<void> {
     console.log('Creating collections...');
-    const collectionsCount = users.length * 2; // в среднем 2 коллекции на пользователя
+    const collectionsCount = users.length * 2;
     let createdCollections = 0;
     
     for (const user of users) {
@@ -225,10 +218,9 @@ export class SeedService implements OnModuleInit {
         const collection = new Collection();
         collection.name = faker.lorem.words(faker.number.int({ min: 1, max: 3 }));
         collection.description = faker.lorem.sentence();
-        collection.isPublic = faker.datatype.boolean(0.7); // 70% коллекций публичные
+        collection.isPublic = faker.datatype.boolean(0.7);
         collection.user = user;
         
-        // Добавляем случайные фото пользователя и других пользователей в коллекцию
         const userPhotos = photos.filter(photo => photo.user.id === user.id);
         const otherPhotos = photos.filter(photo => photo.user.id !== user.id && photo.is_public);
         
@@ -240,7 +232,6 @@ export class SeedService implements OnModuleInit {
         if (collectionPhotos.length > 0) {
           collection.photos = collectionPhotos;
           
-          // Создаем случайный порядок фотографий
           const photoOrder = {};
           collectionPhotos.forEach((photo, index) => {
             photoOrder[photo.id] = index;
@@ -262,22 +253,18 @@ export class SeedService implements OnModuleInit {
     let commentsCount = 0;
     let favoritesCount = 0;
     
-    // Для каждого фото создаем лайки, комментарии и добавления в избранное
     for (const photo of photos) {
-      // Определяем, сколько пользователей будут взаимодействовать с этим фото
       const interactionsCount = faker.number.int({ 
         min: 0, 
-        max: Math.floor(users.length * 0.7) // максимум 70% пользователей
+        max: Math.floor(users.length * 0.7) 
       });
       
-      // Выбираем случайных пользователей для взаимодействия
       const interactingUsers = faker.helpers.arrayElements(
-        users.filter(user => user.id !== photo.user.id), // исключаем владельца фото
+        users.filter(user => user.id !== photo.user.id),
         interactionsCount
       );
       
       for (const user of interactingUsers) {
-        // Создаем лайк с вероятностью 80%
         if (faker.datatype.boolean(0.8)) {
           const like = new Like();
           like.user = user;
@@ -286,17 +273,6 @@ export class SeedService implements OnModuleInit {
           likesCount++;
         }
         
-        // Создаем комментарий с вероятностью 40%
-        if (faker.datatype.boolean(0.4)) {
-          const comment = new Comment();
-          comment.user = user;
-          comment.photo = photo;
-          comment.text = faker.lorem.sentence();
-          await this.commentRepository.save(comment);
-          commentsCount++;
-        }
-        
-        // Добавляем в избранное с вероятностью 30%
         if (faker.datatype.boolean(0.3)) {
           const favorite = new Favorite();
           favorite.user = user;
@@ -305,14 +281,116 @@ export class SeedService implements OnModuleInit {
           favoritesCount++;
         }
       }
+
+      await this.generateCommentsForPhoto(photo, users);
+      commentsCount += 100;
     }
     
     console.log(`Created ${likesCount} likes, ${commentsCount} comments, ${favoritesCount} favorites`);
   }
 
+  private async generateCommentsForPhoto(photo: Photo, users: User[]): Promise<void> {
+    const commentTemplates = [
+      "Замечательная фотография! {adjective} {noun}.",
+      "Очень {adjective} снимок. Мне нравится {noun}.",
+      "Какой {adjective} кадр! {exclamation}",
+      "Это потрясающе! {question}",
+      "{exclamation} Как тебе удалось поймать такой {adjective} момент?",
+      "Мне очень нравится {noun} на этом фото!",
+      "Отличная композиция! {adjective} работа.",
+      "Просто {adjective}! Нет слов.",
+      "{question} {adjective} фотография!",
+      "Я бы хотел(а) научиться так фотографировать. {adjective} результат!",
+      "Серьезно, это {adjective} фото. {exclamation}",
+      "Какая {adjective} атмосфера на фото!",
+      "Цвета просто {adjective}! {exclamation}",
+      "Мне нравится {noun} и {noun} в этом кадре.",
+      "Отличный ракурс! {adjective} идея.",
+      "Beautiful photo! The {noun} looks {adjective}.",
+      "I really like the {noun} in this picture. {exclamation}",
+      "This is {adjective}! How did you capture this?",
+      "The composition is {adjective}. Nice work!",
+      "What a {adjective} shot! {exclamation}",
+      "The lighting is perfect! {adjective} mood.",
+      "I love how you captured the {noun}. {adjective} work!",
+      "This image tells a story. {adjective} concept.",
+      "The colors are {adjective}! {exclamation}",
+      "Such a {adjective} perspective! {question}",
+      "The {noun} looks amazing in this light.",
+      "Stunning {noun}! {exclamation}",
+      "I'm impressed by the {noun}. {adjective} shot!",
+      "This is why I follow your work. {adjective} as always!",
+      "How did you edit this? {adjective} result!"
+    ];
+
+    const adjectives = [
+      "прекрасный", "удивительный", "великолепный", "потрясающий", "невероятный",
+      "завораживающий", "впечатляющий", "гениальный", "изысканный", "вдохновляющий",
+      "уникальный", "креативный", "атмосферный", "гармоничный", "стильный",
+      "красочный", "выразительный", "сказочный", "драматичный", "эмоциональный",
+      "stunning", "amazing", "gorgeous", "breathtaking", "incredible",
+      "mesmerizing", "impressive", "brilliant", "exquisite", "inspiring",
+      "unique", "creative", "atmospheric", "harmonious", "stylish",
+      "colorful", "expressive", "magical", "dramatic", "emotional"
+    ];
+
+    const nouns = [
+      "композиция", "цвета", "свет", "ракурс", "момент",
+      "атмосфера", "детали", "контраст", "перспектива", "текстура",
+      "настроение", "эмоция", "глубина", "экспозиция", "баланс",
+      "сюжет", "идея", "реализация", "концепция", "видение",
+      "composition", "colors", "light", "angle", "moment",
+      "atmosphere", "details", "contrast", "perspective", "texture",
+      "mood", "emotion", "depth", "exposure", "balance",
+      "storyline", "idea", "execution", "concept", "vision"
+    ];
+
+    const exclamations = [
+      "Вау!", "Невероятно!", "Потрясающе!", "Великолепно!", "Обалденно!", 
+      "Супер!", "Фантастика!", "Удивительно!", "Браво!", "Шедевр!",
+      "Wow!", "Incredible!", "Amazing!", "Fantastic!", "Awesome!",
+      "Brilliant!", "Stunning!", "Superb!", "Bravo!", "Masterpiece!"
+    ];
+
+    const questions = [
+      "Какая камера у тебя?", "Где это снято?", "Как ты это сделал(а)?", "Какие настройки использовал(а)?",
+      "Сколько времени ушло на обработку?", "Какой объектив использовал(а)?", "Это естественное освещение?",
+      "Можешь поделиться секретами обработки?", "Это фотошоп или оригинал?", "В какое время суток снято?",
+      "What camera did you use?", "Where was this taken?", "How did you do this?", "What settings did you use?",
+      "How long did it take to edit?", "What lens did you use?", "Is this natural lighting?",
+      "Can you share your editing secrets?", "Is this photoshopped or original?", "What time of day was this shot?"
+    ];
+
+    for (let i = 0; i < 100; i++) {
+      const comment = new Comment();
+      comment.user = faker.helpers.arrayElement(users);
+      comment.photo = photo;
+      
+      const template = faker.helpers.arrayElement(commentTemplates);
+      let text = template
+        .replace('{adjective}', faker.helpers.arrayElement(adjectives))
+        .replace('{noun}', faker.helpers.arrayElement(nouns))
+        .replace('{exclamation}', faker.helpers.arrayElement(exclamations))
+        .replace('{question}', faker.helpers.arrayElement(questions));
+      
+      if (text.includes('{adjective}')) {
+        text = text.replace('{adjective}', faker.helpers.arrayElement(adjectives));
+      }
+      if (text.includes('{noun}')) {
+        text = text.replace('{noun}', faker.helpers.arrayElement(nouns));
+      }
+      
+      comment.text = text;
+      
+      const createdAt = faker.date.recent({ days: 30 });
+      comment.createdAt = createdAt;
+      
+      await this.commentRepository.save(comment);
+    }
+  }
+
   private async downloadAndUploadImage(imageUrl: string): Promise<string> {
     try {
-      // Загружаем изображение с правильными заголовками
       const response = await axios.get(imageUrl, { 
         responseType: 'arraybuffer',
         headers: {
@@ -328,7 +406,6 @@ export class SeedService implements OnModuleInit {
       
       const buffer = Buffer.from(response.data, 'binary');
       
-      // Создаем временный файл
       const tempDir = path.join(process.cwd(), 'temp');
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
@@ -337,7 +414,6 @@ export class SeedService implements OnModuleInit {
       const tempFilePath = path.join(tempDir, `temp_${Date.now()}.jpg`);
       fs.writeFileSync(tempFilePath, buffer);
       
-      // Создаем объект Multer.File для загрузки в S3
       const file: Express.Multer.File = {
         fieldname: 'image',
         originalname: `image_${Date.now()}.jpg`,
@@ -351,10 +427,8 @@ export class SeedService implements OnModuleInit {
         path: tempFilePath
       };
       
-      // Загружаем в S3 и получаем ключ
       const key = await this.s3Service.uploadFile(file);
       
-      // Удаляем временный файл
       fs.unlinkSync(tempFilePath);
       
       return key;
