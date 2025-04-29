@@ -9,6 +9,7 @@ import { Like } from '../entities/like.entity';
 import { User } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
 import { CreateLikeDto } from './dto/createLike.dto';
+import { InterestService } from '../interest/interest.service';
 
 @Injectable()
 export class LikeService {
@@ -19,6 +20,7 @@ export class LikeService {
     private userRepository: Repository<User>,
     @Inject('PHOTO_REPOSITORY')
     private photoRepository: Repository<Photo>,
+    private interestService: InterestService,
   ) {}
 
   async create(userId: string, createLikeDto: CreateLikeDto): Promise<Like> {
@@ -30,6 +32,7 @@ export class LikeService {
 
     const photo = await this.photoRepository.findOne({
       where: { id: createLikeDto.photoId },
+      relations: ['keyWords'],
     });
 
     if (!photo) {
@@ -51,6 +54,11 @@ export class LikeService {
       user,
       photo,
     });
+
+    if (photo.keyWords && photo.keyWords.length > 0) {
+      const keyWordNames = photo.keyWords.map(keyword => keyword.name);
+      await this.interestService.updateInterestsFromLike(userId, keyWordNames);
+    }
 
     return this.likeRepository.save(like);
   }

@@ -9,6 +9,7 @@ import { KeyWord } from '../entities/keyWord.entity';
 import { KeyWordService } from '../keyWord/keyWordService';
 import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InterestService } from '../interest/interest.service';
 
 @Injectable()
 export class PhotoService {
@@ -18,6 +19,7 @@ export class PhotoService {
     private userService: UserService,
     private s3Service: S3Service,
     private keyWordService: KeyWordService,
+    private interestService: InterestService,
   ) {}
   async findAll(userId: string): Promise<Photo[]> {
     return this.photoRepository.find({ where: { user: { id: userId } } });
@@ -124,9 +126,13 @@ export class PhotoService {
     const { page = 1, limit = 10 } = dto;
     const skip = (page - 1) * limit;
 
-    const [photos, total] = await this.photoRepository
+    const userInterests = await this.interestService.getUserInterests(userId);
+    const hasUserInterests = userInterests && userInterests.length > 0;
+    
+    const query = this.photoRepository
       .createQueryBuilder('photo')
       .leftJoinAndSelect('photo.user', 'user')
+      .leftJoinAndSelect('photo.keyWords', 'keyWords')
       .leftJoinAndSelect('photo.likes', 'likes')
       .select([
         'photo.id',
@@ -139,9 +145,20 @@ export class PhotoService {
         'user.avatarKey',
         'likes.id',
         'likes.user',
+        'keyWords',
       ])
-      .where('photo.is_public = true')
-      .orderBy('photo.createdAt')
+      .where('photo.is_public = true');
+    
+    if (hasUserInterests) {
+      query
+        .andWhere('LOWER(keyWords.name) IN (:...userInterests)')
+        .setParameter('userInterests', userInterests.map(interest => interest.toLowerCase()))
+        .orderBy('photo.createdAt', 'DESC');
+    } else {
+      query.orderBy('photo.createdAt', 'DESC');
+    }
+
+    const [photos, total] = await query
       .skip(skip)
       .take(limit)
       .getManyAndCount();
