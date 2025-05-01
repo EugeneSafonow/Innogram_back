@@ -1,5 +1,5 @@
 import { DeleteResult, Repository } from 'typeorm';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Photo } from '../entities/photo.entity';
 import { CreatePhotoDto } from './dto/createPhoto.dto';
 import { S3Service } from '../s3/s3.service';
@@ -300,5 +300,72 @@ export class PhotoService {
     }
     
     return photo;
+  }
+
+  async updatePhotoKeyWords(photoId: string, keyWordIds: number[]) {
+    const photo = await this.photoRepository.findOne({
+      where: { id: parseInt(photoId) },
+      relations: ['keyWords'],
+    });
+
+    if (!photo) {
+      throw new NotFoundException(`Photo with ID ${photoId} not found`);
+    }
+
+    // Find keywords by IDs
+    const keyWords = [];
+    for (const id of keyWordIds) {
+      try {
+        // Find keyword by ID - this is a workaround since we don't have a direct findById method
+        const keyWordById = await this.photoRepository
+          .createQueryBuilder('photo')
+          .leftJoinAndSelect('photo.keyWords', 'keyWord')
+          .where('keyWord.id = :id', { id })
+          .getOne();
+        
+        if (keyWordById && keyWordById.keyWords && keyWordById.keyWords.length > 0) {
+          const keyword = keyWordById.keyWords.find(kw => kw.id === id);
+          if (keyword) {
+            keyWords.push(keyword);
+          }
+        }
+      } catch (error) {
+        console.error(`Error finding keyword with ID ${id}:`, error);
+      }
+    }
+    
+    if (keyWords.length !== keyWordIds.length) {
+      throw new BadRequestException('One or more keyword IDs are invalid');
+    }
+
+    photo.keyWords = keyWords;
+    return this.photoRepository.save(photo);
+  }
+
+  async replacePhoto(photoId: string, file: Express.Multer.File) {
+    const photo = await this.photoRepository.findOne({
+      where: { id: parseInt(photoId) },
+      relations: ['keyWords', 'user'],
+    });
+
+    if (!photo) {
+      throw new NotFoundException(`Photo with ID ${photoId} not found`);
+    }
+
+    // Delete old photo from S3
+    try {
+      await this.s3Service.deleteFile(photo.key);
+    } catch (error) {
+      console.error('Error deleting old photo file:', error);
+      // Continue even if delete fails
+    }
+
+    // Upload new photo to S3
+    const key = await this.s3Service.uploadFile(file);
+
+    // Update the photo record with new S3 key but keep other metadata
+    photo.key = key;
+
+    return this.photoRepository.save(photo);
   }
 }

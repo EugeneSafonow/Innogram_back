@@ -38,12 +38,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Invalid token structure');
       }
 
-      const user = await this.authService.validate(payload);
-      if (!user) {
+    const user = await this.authService.validate(payload);
+    if (!user) {
         throw new UnauthorizedException('User not found');
-      }
+    }
       
-      return user;
+    return user;
     } catch (error) {
       throw new UnauthorizedException('Authentication failed');
     }

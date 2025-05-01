@@ -28,7 +28,7 @@ export class Collection {
   @Column({ type: 'jsonb', nullable: true })
   photoOrder: { [key: string]: number };
 
-  @ManyToOne(() => User, (user) => user.collections)
+  @ManyToOne(() => User, (user) => user.collections, { onDelete: 'CASCADE'})
   @JoinColumn({ name: 'user_id' })
   user: User;
 

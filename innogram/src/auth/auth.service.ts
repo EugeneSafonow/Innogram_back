@@ -39,6 +39,7 @@ export class AuthService {
       username: user.username,
       email: user.email,
       avatarKey: user.avatarKey,
+      role: user.role,
       ...tokens,
     };
   }
@@ -118,6 +119,7 @@ export class AuthService {
         username: user.username,
         email: user.email,
         avatarKey: user.avatarKey,
+        role: user.role,
         ...tokens,
       };
     } catch (error) {

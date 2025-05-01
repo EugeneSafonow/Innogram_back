@@ -16,6 +16,7 @@ import { Collection } from './collection.entity';
 
 export enum UserRole {
   USER = 'user',
+  MODERATOR = 'moderator',
   ADMIN = 'admin',
 }
 

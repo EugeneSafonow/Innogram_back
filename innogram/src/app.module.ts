@@ -12,6 +12,7 @@ import { FavoriteModule } from './favorite/favorite.module';
 import { CollectionModule } from './collection/collection.module';
 import { SeedModule } from './seed/seed.module';
 import { InterestModule } from './interest/interest.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { InterestModule } from './interest/interest.module';
     CollectionModule,
     SeedModule,
     InterestModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

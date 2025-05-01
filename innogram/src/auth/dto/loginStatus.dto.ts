@@ -3,6 +3,7 @@ export interface LoginStatusDto {
   username: string;
   email: string;
   avatarKey: string;
+  role: string;
   accessToken: string;
   refreshToken: string;
   expiresIn: number;

@@ -13,7 +13,7 @@ export class Favorite {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.favorites)
+  @ManyToOne(() => User, (user) => user.favorites, { onDelete: 'CASCADE'})
   @JoinColumn({ name: 'user_id' })
   user: User;
 
