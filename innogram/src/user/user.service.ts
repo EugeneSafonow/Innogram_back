@@ -45,8 +45,36 @@ export class UserService {
     return user;
   }
 
-  async findByPayload({ username }: any): Promise<User> {
-    return this.userRepository.findOne({ where: { username } });
+  async findByPayload({ username, email, userId }: any): Promise<User> {
+    if (!username || !email) {
+      return null;
+    }
+    
+    try {
+      // If userId is provided, use it as primary search criteria
+      if (userId) {
+        const userById = await this.userRepository.findOne({ 
+          where: { id: userId } 
+        });
+        
+        // Verify that the username and email match
+        if (userById && userById.username === username && userById.email === email) {
+          return userById;
+        }
+      }
+      
+      // Fallback to search by username and email
+      const user = await this.userRepository.findOne({ 
+        where: { 
+          username,
+          email 
+        } 
+      });
+      
+      return user;
+    } catch (error) {
+      return null;
+    }
   }
 
   async create(user: CreateUserDto): Promise<User> {

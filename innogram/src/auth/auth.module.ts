@@ -10,11 +10,13 @@ import { UserModule } from '../user/user.module';
 import { KeyWordModule } from '../keyWord/keyWordModule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { S3Module } from 'src/s3/s3.module';
+import { AuthRedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
     UserModule,
     KeyWordModule,
+    AuthRedisModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
       property: 'user',
@@ -25,7 +27,7 @@ import { S3Module } from 'src/s3/s3.module';
         return {
           secret: config.get<string>('JWT_KEY'),
           signOptions: {
-            expiresIn: config.get<string>('JWT_EXPIRES'),
+            expiresIn: config.get<string>('JWT_EXPIRES', '24h'),
           },
         };
       },
@@ -41,6 +43,6 @@ import { S3Module } from 'src/s3/s3.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserService],
-  exports: [PassportModule, JwtModule],
+  exports: [PassportModule, JwtModule, AuthService],
 })
 export class AuthModule {}
