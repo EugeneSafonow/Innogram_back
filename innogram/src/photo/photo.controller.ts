@@ -30,6 +30,8 @@ import { JwtAuthGuard } from '../guards/jwtAuth.guard';
 import { GetPhotosDto } from './dto/getPhotos.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
+import { GenerateDownloadLinkDto } from './dto/generate-download-link.dto';
+import { DownloadLinkResponseDto } from './dto/download-link-response.dto';
 
 @Controller('photo')
 export class PhotoController {
@@ -58,6 +60,37 @@ export class PhotoController {
     @Query('limit') limit?: number
   ) {
     return this.photoService.getUserPrivatePhotos(req.user.id, page, limit);
+  }
+
+  @Post('generate-download-link')
+  @UseGuards(AuthGuard('jwt'))
+  async generateDownloadLink(
+    @Req() req,
+    @Body() dto: GenerateDownloadLinkDto
+  ): Promise<DownloadLinkResponseDto> {
+    return this.photoService.generateDownloadLink(dto.photoId, req.user.id);
+  }
+
+  @Get('download/:id')
+  async downloadPhoto(
+    @Param('id') id: number,
+    @Res() res: Response,
+    @Query('token') token?: string,
+  ): Promise<void> {
+    const photo = await this.photoService.verifyDownloadToken(id, token);
+    
+    try {
+      const fileData = await this.s3Service.getFile(photo.key);
+      
+      res.set({
+        'Content-Type': fileData.contentType,
+        'Content-Disposition': `attachment; filename=${photo.key}`
+      });
+      
+      fileData.stream.pipe(res);
+    } catch (error) {
+      throw new NotFoundException('File not found');
+    }
   }
 
   @Get(':id')

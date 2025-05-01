@@ -10,6 +10,8 @@ import { KeyWordService } from '../keyWord/keyWordService';
 import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InterestService } from '../interest/interest.service';
+import { randomBytes } from 'crypto';
+import { DownloadLinkResponseDto } from './dto/download-link-response.dto';
 
 @Injectable()
 export class PhotoService {
@@ -248,5 +250,55 @@ export class PhotoService {
       photos,
       hasMore: skip + photos.length < total,
     };
+  }
+
+  async generateDownloadLink(photoId: number, userId: string): Promise<DownloadLinkResponseDto> {
+    const photo = await this.findOne(photoId);
+    
+    if (!photo) {
+      throw new NotFoundException(`Photo with id ${photoId} not found`);
+    }
+
+    if(photo.is_public){
+      return {downloadUrl: `/photo/download/${photoId}`};
+    }
+    
+    if (photo.user.id !== userId) {
+      throw new NotFoundException(`Photo with id ${photoId} not found or not accessible`);
+    }
+    
+    const downloadToken = randomBytes(32).toString('hex');
+    
+    await this.photoRepository.update(photoId, {
+      downloadToken,
+    });
+
+    
+    const downloadUrl = `/photo/download/${photoId}?token=${downloadToken}`;
+    
+    return {
+      downloadUrl,
+    };
+  }
+  
+  async verifyDownloadToken(photoId: number, token: string): Promise<Photo> {
+    const photo = await this.photoRepository.findOne({
+      where: { id: photoId },
+      relations: ['user']
+    });
+    
+    if (!photo) {
+      throw new NotFoundException(`Photo with id ${photoId} not found`);
+    }
+
+    if(photo.is_public){
+      return photo;
+    }
+    
+    if (photo.downloadToken !== token) {
+      throw new NotFoundException('Invalid download token');
+    }
+    
+    return photo;
   }
 }
