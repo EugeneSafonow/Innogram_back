@@ -45,8 +45,36 @@ export class UserService {
     return user;
   }
 
-  async findByPayload({ username }: any): Promise<User> {
-    return this.userRepository.findOne({ where: { username } });
+  async findByPayload({ username, email, userId }: any): Promise<User> {
+    if (!username || !email) {
+      return null;
+    }
+    
+    try {
+      // If userId is provided, use it as primary search criteria
+      if (userId) {
+        const userById = await this.userRepository.findOne({ 
+          where: { id: userId } 
+        });
+        
+        // Verify that the username and email match
+        if (userById && userById.username === username && userById.email === email) {
+          return userById;
+        }
+      }
+      
+      // Fallback to search by username and email
+      const user = await this.userRepository.findOne({ 
+        where: { 
+          username,
+          email 
+        } 
+      });
+      
+      return user;
+    } catch (error) {
+      return null;
+    }
   }
 
   async create(user: CreateUserDto): Promise<User> {
@@ -142,5 +170,30 @@ export class UserService {
     user.password = await hash(newPassword, salt);
 
     return this.userRepository.save(user);
+  }
+
+  async searchUsers(searchTerm: string, page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const term = `%${searchTerm.toLowerCase()}%`;
+
+    const [users, total] = await this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'user.role',
+      ])
+      .where('LOWER(user.username) LIKE :term', { term })
+      .orderBy('user.username', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      users,
+      hasMore: skip + users.length < total,
+      total
+    };
   }
 }

@@ -183,4 +183,18 @@ export class PhotoController {
   ) {
     return this.photoService.findAllPaginated(userId, page, limit);
   }
+
+  @Get('search/keywords')
+  @UseGuards(JwtAuthGuard)
+  async searchByKeywords(
+    @Query('term') searchTerm: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 12
+  ) {
+    if (!searchTerm || searchTerm.trim() === '') {
+      return { photos: [], hasMore: false };
+    }
+    
+    return this.photoService.searchPhotosByKeywords(searchTerm, page, limit);
+  }
 }

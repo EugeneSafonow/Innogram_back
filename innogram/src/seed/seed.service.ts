@@ -430,7 +430,7 @@ export class SeedService implements OnModuleInit {
       const key = await this.s3Service.uploadFile(file);
       
       fs.unlinkSync(tempFilePath);
-      
+        
       return key;
     } catch (error) {
       console.error(`Error downloading/uploading image: ${error.message}`);

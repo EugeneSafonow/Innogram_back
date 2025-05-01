@@ -11,6 +11,7 @@ import {
   UsePipes,
   ValidationPipe,
   UseInterceptors,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/createUser.dto';
@@ -62,5 +63,41 @@ export class AuthController {
   public async testAuth(@Req() req): Promise<JwtPayloadDto> {
     const { password, ...result } = req.user;
     return result;
+  }
+
+  @Post('verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyToken(@Body() { token }: { token: string }) {
+    if (!token) {
+      throw new UnauthorizedException('Token is required');
+    }
+    
+    const isValid = await this.authService.verifyToken(token);
+    
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    
+    return { valid: true };
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  public async logout(@Req() req) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    if (!token) {
+      throw new UnauthorizedException('Authorization token is missing');
+    }
+    
+    const success = await this.authService.logout(token, req.user.id);
+    
+    if (!success) {
+      throw new UnauthorizedException('Logout failed');
+    }
+    
+    return { message: 'Successfully logged out' };
   }
 }

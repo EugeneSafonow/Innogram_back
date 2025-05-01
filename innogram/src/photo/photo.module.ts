@@ -8,9 +8,10 @@ import { S3Module } from '../s3/s3.module';
 import { UserService } from '../user/user.service';
 import { UserModule } from '../user/user.module';
 import { KeyWordModule } from '../keyWord/keyWordModule';
+import { InterestModule } from '../interest/interest.module';
 
 @Module({
-  imports: [DatabaseModule, S3Module, UserModule, KeyWordModule],
+  imports: [DatabaseModule, S3Module, UserModule, KeyWordModule, InterestModule],
   controllers: [PhotoController],
   providers: [...photoProviders, PhotoService, S3Service, UserService],
 })

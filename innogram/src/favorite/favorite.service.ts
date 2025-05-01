@@ -4,6 +4,7 @@ import { Favorite } from '../entities/favorite.entity'
 import { Photo } from '../entities/photo.entity'
 import { User } from '../entities/user.entity'
 import { AddFavoriteDto } from './dto/add-favorite.dto'
+import { InterestService } from '../interest/interest.service'
 
 @Injectable()
 export class FavoriteService {
@@ -12,11 +13,13 @@ export class FavoriteService {
         private readonly favoriteRepository: Repository<Favorite>,
         @Inject('PHOTO_REPOSITORY')
         private readonly photoRepository: Repository<Photo>,
+        private readonly interestService: InterestService,
     ) {}
 
     async addToFavorites(user: User, dto: AddFavoriteDto): Promise<Favorite> {
         const photo = await this.photoRepository.findOne({
             where: { id: dto.photoId },
+            relations: ['keyWords'],
         })
 
         if (!photo) {
@@ -38,6 +41,11 @@ export class FavoriteService {
             user,
             photo,
         })
+
+        if (photo.keyWords && photo.keyWords.length > 0) {
+            const keyWordNames = photo.keyWords.map(keyword => keyword.name);
+            await this.interestService.updateInterestsFromFavorite(user.id, keyWordNames);
+        }
 
         return this.favoriteRepository.save(favorite)
     }
