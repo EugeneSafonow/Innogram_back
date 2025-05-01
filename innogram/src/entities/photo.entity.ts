@@ -29,6 +29,9 @@ export class Photo {
   @Column()
   is_public: boolean;
 
+  @Column({ nullable: true })
+  downloadToken: string;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
