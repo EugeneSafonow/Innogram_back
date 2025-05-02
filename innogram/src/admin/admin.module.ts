@@ -24,9 +24,16 @@ import { InterestService } from 'src/interest/interest.service';
     UserModule,
     DatabaseModule,
     S3Module,
-    InterestModule
+    InterestModule,
   ],
   controllers: [AdminUserController, AdminPhotoController],
-  providers: [AdminService, PhotoService, S3Service, InterestService,  ...photoProviders, ...userProviders]
+  providers: [
+    AdminService,
+    PhotoService,
+    S3Service,
+    InterestService,
+    ...photoProviders,
+    ...userProviders,
+  ],
 })
 export class AdminModule {}

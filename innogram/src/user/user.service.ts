@@ -49,28 +49,32 @@ export class UserService {
     if (!username || !email) {
       return null;
     }
-    
+
     try {
       // If userId is provided, use it as primary search criteria
       if (userId) {
-        const userById = await this.userRepository.findOne({ 
-          where: { id: userId } 
+        const userById = await this.userRepository.findOne({
+          where: { id: userId },
         });
-        
+
         // Verify that the username and email match
-        if (userById && userById.username === username && userById.email === email) {
+        if (
+          userById &&
+          userById.username === username &&
+          userById.email === email
+        ) {
           return userById;
         }
       }
-      
+
       // Fallback to search by username and email
-      const user = await this.userRepository.findOne({ 
-        where: { 
+      const user = await this.userRepository.findOne({
+        where: {
           username,
-          email 
-        } 
+          email,
+        },
       });
-      
+
       return user;
     } catch (error) {
       return null;
@@ -178,12 +182,7 @@ export class UserService {
 
     const [users, total] = await this.userRepository
       .createQueryBuilder('user')
-      .select([
-        'user.id',
-        'user.username',
-        'user.avatarKey',
-        'user.role',
-      ])
+      .select(['user.id', 'user.username', 'user.avatarKey', 'user.role'])
       .where('LOWER(user.username) LIKE :term', { term })
       .orderBy('user.username', 'ASC')
       .skip(skip)
@@ -193,7 +192,7 @@ export class UserService {
     return {
       users,
       hasMore: skip + users.length < total,
-      total
+      total,
     };
   }
 }

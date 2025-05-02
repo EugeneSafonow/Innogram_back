@@ -32,6 +32,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetRecommendedPhotosDto } from './dto/getRecommendedPhotos.dto';
 import { GenerateDownloadLinkDto } from './dto/generate-download-link.dto';
 import { DownloadLinkResponseDto } from './dto/download-link-response.dto';
+import { UserRole } from 'src/entities/user.entity';
 
 @Controller('photo')
 export class PhotoController {
@@ -183,13 +184,14 @@ export class PhotoController {
     @Param('id') id: number,
     @Res() res: Response,
     @Body() getPhotosDto: GetPhotosDto,
+    @Req() req
   ): Promise<void> {
     const photoEntity = await this.photoService.findOne(id);
     if (!photoEntity) {
       throw new NotFoundException(`No photo with id ${id}`);
     }
 
-    if (getPhotosDto.userId !== photoEntity.user.id) {
+    if ((req.user.id !== photoEntity.user.id ) && req.user.role == UserRole.USER) {
       throw new ForbiddenException('No permission to photo');
     }
     const s3Respone = await this.s3Service.getFile(photoEntity.key);
