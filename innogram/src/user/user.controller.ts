@@ -11,6 +11,7 @@ import {
   UploadedFile,
   Req,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/updateUser.dto';
@@ -74,5 +75,11 @@ export class UserController {
       ...updateUserDto,
       avatar,
     });
+  }
+
+  @Delete()
+  async deleteAccount(@Req() req) {
+    await this.userService.deleteProfile(req.user.id);
+    return { message: 'Account deleted successfully' };
   }
 }

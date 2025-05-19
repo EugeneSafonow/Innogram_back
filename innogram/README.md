@@ -97,3 +97,61 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Сидирование базы данных
+
+Для заполнения базы данных тестовыми данными, следуйте инструкциям:
+
+1. Убедитесь, что база данных и S3 хранилище настроены корректно
+2. Установите зависимости: `npm install`
+3. Скопируйте `.env.example` в `.env` и установите `SEED_DB=true`
+4. Запустите приложение: `npm run start:dev`
+
+После запуска приложения база данных будет заполнена:
+- Пользователями с фотографиями профиля
+- Фотографиями с описаниями
+- Коллекциями фотографий
+- Лайками и комментариями
+- Ключевыми словами
+
+Учетные данные администратора:
+- Email: admin@innogram.com
+- Пароль: admin123
+
+Учетные данные обычных пользователей:
+- Пароль для всех: password123
+
+После первого запуска рекомендуется установить `SEED_DB=false` для предотвращения повторного заполнения при последующих запусках.
+
+## Redis Authentication Setup
+
+For better security and performance, the authentication system uses Redis to store refresh tokens and maintain a token blacklist.
+
+### Requirements
+- Redis server (local or remote)
+
+### Configuration
+Add the following environment variables to your `.env` file:
+
+```
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# JWT Configuration (рекомендованные значения)
+JWT_KEY=your_secret_key_here
+JWT_REFRESH_KEY=your_refresh_secret_key_here
+JWT_EXPIRES=24h
+JWT_REFRESH_EXPIRES=30d
+```
+
+### Troubleshooting
+If you experience token expiration issues:
+- Make sure JWT_EXPIRES is set to a reasonable time (e.g., 24h)
+- Check that the server and client time are synchronized
+- If tokens continue to expire too quickly, you may need to increase the expiration time
+
+### Features
+- Token blacklisting for immediate revocation
+- Secure refresh token storage
+- Protection against token reuse
+- Strict validation of token payloads

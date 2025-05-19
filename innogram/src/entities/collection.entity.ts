@@ -19,13 +19,10 @@ export class Collection {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  description: string;
-
   @Column({ name: 'is_public', default: true })
   isPublic: boolean;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'photo_order', type: 'jsonb', nullable: true })
   photoOrder: { [key: string]: number };
 
   @ManyToOne(() => User, (user) => user.collections, { onDelete: 'CASCADE'})

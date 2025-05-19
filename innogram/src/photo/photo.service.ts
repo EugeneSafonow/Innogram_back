@@ -114,11 +114,9 @@ export class PhotoService {
     const respones = await this.photoRepository.save(editedPhoto);
     return respones;
   }
-  async deletePhoto(id: number, userId: string): Promise<DeleteResult> {
+
+  async deletePhoto(id: number): Promise<DeleteResult> {
     const photoEntity = await this.findOne(id);
-    if (!photoEntity || photoEntity.user.id !== userId) {
-      throw new NotFoundException(`No photo with id ${id}`);
-    }
     await this.s3Service.deleteFile(photoEntity.key);
     const result = await this.photoRepository.delete(photoEntity.id);
     return result;

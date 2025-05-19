@@ -5,10 +5,13 @@ import {
   Inject,
   ForbiddenException,
 } from '@nestjs/common';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, ILike } from 'typeorm';
 import { User, UserRole } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
 import { PaginationOptions, PaginatedResponse } from './dto/pagination.dto';
+import { S3Service } from '../s3/s3.service';
+import { Comment } from '../entities/comment.entity';
+import { UpdateCommentDto } from '../comment/dto/updateComment.dto';
 
 @Injectable()
 export class AdminService {
@@ -18,6 +21,11 @@ export class AdminService {
 
     @Inject('PHOTO_REPOSITORY')
     private photoRepository: Repository<Photo>,
+
+    @Inject('COMMENT_REPOSITORY')
+    private commentRepository: Repository<Comment>,
+
+    private readonly s3Service: S3Service,
   ) {}
 
   // User-related methods
@@ -114,6 +122,7 @@ export class AdminService {
     userId: string,
     updateData: Partial<User>,
     requesterRole: UserRole,
+    avatar?: Express.Multer.File,
   ) {
     const user = await this.getUserById(userId);
 
@@ -130,6 +139,18 @@ export class AdminService {
       throw new BadRequestException(
         'Cannot set user role to admin through this endpoint',
       );
+    }
+
+    // Handle avatar upload if provided
+    if (avatar) {
+      // Delete old avatar if exists
+      if (user.avatarKey) {
+        await this.s3Service.deleteFile(user.avatarKey);
+      }
+      
+      // Upload new avatar
+      const uniqueKey = await this.s3Service.uploadFile(avatar);
+      updateData.avatarKey = uniqueKey;
     }
 
     // Update user properties
@@ -213,9 +234,108 @@ export class AdminService {
     return this.photoRepository.save(photo);
   }
 
-  async deletePhoto(photoId: string) {
-    const photo = await this.getPhotoById(parseInt(photoId));
-    await this.photoRepository.remove(photo);
-    return { success: true, message: 'Photo deleted successfully' };
+  // Comment-related methods
+  async getAllComments(
+    options: PaginationOptions,
+  ): Promise<PaginatedResponse<Comment>> {
+    const [comments, total] = await this.commentRepository.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip: (options.page - 1) * options.limit,
+      take: options.limit,
+      relations: ['user', 'photo'],
+    });
+
+    return {
+      data: comments,
+      total,
+      page: options.page,
+      limit: options.limit,
+      totalPages: Math.ceil(total / options.limit),
+    };
+  }
+
+  async searchComments(
+    options: PaginationOptions,
+    searchTerm: string,
+  ): Promise<PaginatedResponse<Comment>> {
+    const [comments, total] = await this.commentRepository.findAndCount({
+      where: [
+        { text: ILike(`%${searchTerm}%`) },
+        { user: { username: ILike(`%${searchTerm}%`) } },
+      ],
+      order: { createdAt: 'DESC' },
+      skip: (options.page - 1) * options.limit,
+      take: options.limit,
+      relations: ['user', 'photo'],
+    });
+
+    return {
+      data: comments,
+      total,
+      page: options.page,
+      limit: options.limit,
+      totalPages: Math.ceil(total / options.limit),
+    };
+  }
+
+  async getCommentsByPhotoId(
+    photoId: number,
+    options: PaginationOptions,
+  ): Promise<PaginatedResponse<Comment>> {
+    const photo = await this.photoRepository.findOne({
+      where: { id: photoId },
+    });
+
+    if (!photo) {
+      throw new NotFoundException(`Photo with ID ${photoId} not found`);
+    }
+
+    const [comments, total] = await this.commentRepository.findAndCount({
+      where: { photo: { id: photoId } },
+      order: { createdAt: 'DESC' },
+      skip: (options.page - 1) * options.limit,
+      take: options.limit,
+      relations: ['user', 'photo'],
+    });
+
+    return {
+      data: comments,
+      total,
+      page: options.page,
+      limit: options.limit,
+      totalPages: Math.ceil(total / options.limit),
+    };
+  }
+
+  async getCommentById(commentId: number): Promise<Comment> {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId },
+      relations: ['user', 'photo'],
+    });
+
+    if (!comment) {
+      throw new NotFoundException(`Comment with ID ${commentId} not found`);
+    }
+
+    return comment;
+  }
+
+  async updateComment(
+    commentId: number,
+    updateData: UpdateCommentDto,
+  ): Promise<Comment> {
+    const comment = await this.getCommentById(commentId);
+    
+    // Update the comment text
+    comment.text = updateData.text;
+    
+    return this.commentRepository.save(comment);
+  }
+
+  async deleteComment(commentId: string | number): Promise<void> {
+    const id = typeof commentId === 'string' ? parseInt(commentId) : commentId;
+    const comment = await this.getCommentById(id);
+    
+    await this.commentRepository.remove(comment);
   }
 }

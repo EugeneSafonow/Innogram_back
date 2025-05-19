@@ -91,7 +91,7 @@ export class CollectionController {
 
   @Get('user/:id')
   @UseGuards(JwtAuthGuard)
-  findUserCollections(
+  getUserCollections(
     @Param('id') userId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -117,7 +117,7 @@ export class CollectionController {
   }
 
   @Patch(':id/toggle-visibility')
-  toggleVisibility(@Req() req, @Param('id') id: string) {
+  updateVisibility(@Req() req, @Param('id') id: string) {
     return this.collectionService.toggleVisibility(id, req.user.id);
   }
 }

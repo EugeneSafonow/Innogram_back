@@ -8,7 +8,7 @@ import {
 import { User } from './user.entity';
 import { Photo } from './photo.entity';
 
-@Entity()
+@Entity("favorites")
 export class Favorite {
   @PrimaryGeneratedColumn('uuid')
   id: string;

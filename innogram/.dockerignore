@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build artifacts
+dist
+build
+*.tsbuildinfo
+
+# Local development
+.env
+.env.*
+.DS_Store
+
+# Version control
+.git
+.gitignore
+
+# Tests
+coverage
+.nyc_output
+test
+**/*.spec.ts
+
+# IDE
+.idea
+.vscode
+
+# Project specific
+volume
+localstack-volume
+README.md
+docker-compose.yml 

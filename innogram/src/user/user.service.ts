@@ -123,11 +123,11 @@ export class UserService {
     }
 
     if (updateUserDto.username) {
-      const existingUser = await this.userRepository.findOne({
+      const existingUserWithUsername = await this.userRepository.findOne({
         where: { username: updateUserDto.username },
       });
 
-      if (existingUser && existingUser.id !== userId) {
+      if (existingUserWithUsername && existingUserWithUsername.id !== userId) {
         throw new BadRequestException('Username already taken');
       }
 
@@ -135,11 +135,15 @@ export class UserService {
     }
 
     if (updateUserDto.email) {
-      user.email = updateUserDto.email;
-    }
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+      });
 
-    if (updateUserDto.role) {
-      user.role = updateUserDto.role;
+      if (existingUserWithEmail && existingUserWithEmail.id !== userId) {
+        throw new BadRequestException('Email already taken');
+      }
+
+      user.email = updateUserDto.email;
     }
 
     if (updateUserDto.interests) {
@@ -194,5 +198,31 @@ export class UserService {
       hasMore: skip + users.length < total,
       total,
     };
+  }
+
+  async deleteProfile(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ 
+      where: { id: userId },
+      relations: ['photos', 'collections', 'comments', 'likes', 'interests']
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Delete user's avatar from S3 if exists
+    if (user.avatarKey) {
+      await this.s3Service.deleteFile(user.avatarKey);
+    }
+
+    // Delete user's photos from S3
+    for (const photo of user.photos) {
+      if (photo.key) {
+        await this.s3Service.deleteFile(photo.key);
+      }
+    }
+
+    // Remove user and all related data
+    await this.userRepository.remove(user);
   }
 }

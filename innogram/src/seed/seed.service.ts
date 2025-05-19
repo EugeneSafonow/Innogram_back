@@ -71,11 +71,35 @@ export class SeedService implements OnModuleInit {
     await this.safelyTruncateTable('favorite');
     await this.safelyTruncateTable('like');
     await this.safelyTruncateTable('comment');
-    await this.safelyTruncateTable('key_word');
+    
+    // Очищаем связь между пользователями и ключевыми словами
+    try {
+      await this.userRepository.query('DELETE FROM users_interests_keywords');
+      console.log('User-keywords relations cleared');
+    } catch (error) {
+      console.error('Error clearing user-keywords relations:', error.message);
+    }
+    
+    // Очищаем связь между фотографиями и ключевыми словами
+    try {
+      await this.userRepository.query('DELETE FROM photo_key_words_key_word');
+      console.log('Photo-keywords relations cleared');
+    } catch (error) {
+      console.error('Error clearing photo-keywords relations:', error.message);
+    }
+    
     await this.safelyTruncateTable('collection_photos');
     await this.safelyTruncateTable('photo');
     await this.safelyTruncateTable('collections');
     await this.safelyTruncateTable('users');
+    
+    // Удаляем ключевые слова через DELETE, а не TRUNCATE для более надежной очистки
+    try {
+      await this.keyWordRepository.query('DELETE FROM keywords');
+      console.log('Keywords cleared');
+    } catch (error) {
+      console.error('Error clearing keywords:', error.message);
+    }
     
     console.log('Database cleared');
   }
@@ -113,12 +137,27 @@ export class SeedService implements OnModuleInit {
     const keywords: KeyWord[] = [];
     
     for (const name of keywordNames) {
+      try {
+        // Проверяем, существует ли уже такое ключевое слово
+        const existingKeyword = await this.keyWordRepository.findOne({ 
+          where: { name }
+        });
+        
+        if (existingKeyword) {
+          console.log(`Keyword "${name}" already exists, skipping creation`);
+          keywords.push(existingKeyword);
+        } else {
       const keyword = new KeyWord();
       keyword.name = name;
       keywords.push(await this.keyWordRepository.save(keyword));
+          console.log(`Created keyword "${name}"`);
+        }
+      } catch (error) {
+        console.error(`Error creating keyword "${name}": ${error.message}`);
+      }
     }
     
-    console.log(`Created ${keywords.length} keywords`);
+    console.log(`Using ${keywords.length} keywords for seeding`);
     return keywords;
   }
 
@@ -217,7 +256,6 @@ export class SeedService implements OnModuleInit {
       for (let i = 0; i < userCollectionsCount; i++) {
         const collection = new Collection();
         collection.name = faker.lorem.words(faker.number.int({ min: 1, max: 3 }));
-        collection.description = faker.lorem.sentence();
         collection.isPublic = faker.datatype.boolean(0.7);
         collection.user = user;
         
@@ -283,7 +321,7 @@ export class SeedService implements OnModuleInit {
       }
 
       await this.generateCommentsForPhoto(photo, users);
-      commentsCount += 100;
+      commentsCount += 30;
     }
     
     console.log(`Created ${likesCount} likes, ${commentsCount} comments, ${favoritesCount} favorites`);

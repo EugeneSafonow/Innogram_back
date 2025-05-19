@@ -1,4 +1,4 @@
-import { IsUUID, IsEmail, IsString, IsEnum, IsArray } from 'class-validator';
+import { IsUUID, IsEmail, IsString, IsEnum, IsArray, IsOptional } from 'class-validator';
 import { UserRole } from '../../entities/user.entity';
 import { KeyWord } from '../../entities/keyWord.entity';
 
@@ -15,8 +15,9 @@ export class UserPayloadDto {
   @IsEnum(UserRole)
   role: UserRole;
 
+  @IsOptional()
   @IsArray()
-  interests: KeyWord[];
+  interests?: KeyWord[];
 
   created_at: Date;
 }

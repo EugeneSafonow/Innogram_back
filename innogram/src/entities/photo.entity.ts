@@ -1,70 +1,70 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  ManyToMany,
-  OneToMany,
-} from 'typeorm';
-import { User } from './user.entity';
-import { KeyWord } from './keyWord.entity';
-import { Like } from './like.entity';
-import { Comment } from './comment.entity';
-import { Favorite } from './favorite.entity';
-import { Collection } from './collection.entity';
+  import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    ManyToOne,
+    JoinColumn,
+    ManyToMany,
+    OneToMany,
+  } from 'typeorm';
+  import { User } from './user.entity';
+  import { KeyWord } from './keyWord.entity';
+  import { Like } from './like.entity';
+  import { Comment } from './comment.entity';
+  import { Favorite } from './favorite.entity';
+  import { Collection } from './collection.entity';
 
-@Entity()
-export class Photo {
-  @PrimaryGeneratedColumn()
-  id: number; //TODO TO UUID
+  @Entity("photos")
+  export class Photo {
+    @PrimaryGeneratedColumn()
+    id: number; //TODO TO UUID
 
-  @Column()
-  description: string;
+    @Column()
+    description: string;
 
-  @Column({ unique: true })
-  key: string;
+    @Column({ unique: true })
+    key: string;
 
-  @Column()
-  is_public: boolean;
+    @Column()
+    is_public: boolean;
 
-  @Column({ nullable: true })
-  downloadToken: string;
+    @Column({ nullable: true })
+    downloadToken: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+    @CreateDateColumn({ type: 'timestamp' })
+    createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.photos, {
-    onDelete: 'CASCADE',
-    eager: false,
-  })
-  @JoinColumn({ name: 'userId' })
-  user: User;
+    @ManyToOne(() => User, (user) => user.photos, {
+      onDelete: 'CASCADE',
+      eager: false,
+    })
+    @JoinColumn({ name: 'userId' })
+    user: User;
 
-  @ManyToMany(() => KeyWord, (keyWord) => keyWord.photos, {
-    onDelete: 'CASCADE',
-  })
-  keyWords: KeyWord[];
+    @ManyToMany(() => KeyWord, (keyWord) => keyWord.photos, {
+      onDelete: 'CASCADE',
+    })
+    keyWords: KeyWord[];
 
-  @OneToMany(() => Like, (like: Like) => like.photo, {
-    onDelete: 'CASCADE',
-  })
-  likes: Like[];
+    @OneToMany(() => Like, (like: Like) => like.photo, {
+      onDelete: 'CASCADE',
+    })
+    likes: Like[];
 
-  @OneToMany(() => Comment, (comment) => comment.photo, {
-    onDelete: 'CASCADE',
-  })
-  comments: Comment[];
+    @OneToMany(() => Comment, (comment) => comment.photo, {
+      onDelete: 'CASCADE',
+    })
+    comments: Comment[];
 
-  @OneToMany(() => Favorite, (favorite) => favorite.photo, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
-  favorites: Favorite[];
+    @OneToMany(() => Favorite, (favorite) => favorite.photo, {
+      cascade: true,
+      onDelete: 'CASCADE',
+    })
+    favorites: Favorite[];
 
-  @ManyToMany(() => Collection, (collection) => collection.photos, {
-    onDelete: 'CASCADE',
-  })
-  collections: Collection[];
-}
+    @ManyToMany(() => Collection, (collection) => collection.photos, {
+      onDelete: 'CASCADE',
+    })
+    collections: Collection[];
+  }

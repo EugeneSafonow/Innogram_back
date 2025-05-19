@@ -5,10 +5,6 @@ export class UpdateCollectionDto {
     @IsOptional()
     name?: string
 
-    @IsString()
-    @IsOptional()
-    description?: string
-
     @IsBoolean()
     @IsOptional()
     isPublic?: boolean

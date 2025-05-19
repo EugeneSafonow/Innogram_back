@@ -8,6 +8,8 @@ import {
   UseGuards,
   Query,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwtAuth.guard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -15,6 +17,7 @@ import { Roles } from '../decorators/roles.decorator';
 import { AdminService } from './admin.service';
 import { User, UserRole } from '../entities/user.entity';
 import { PaginatedResponse } from './dto/pagination.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,12 +55,14 @@ export class AdminUserController {
   // Moderators cannot edit admin users or change user roles
   @Put(':id')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @UseInterceptors(FileInterceptor('avatar'))
   async updateUser(
     @Param('id') userId: string,
     @Body() updateData: Partial<User>,
     @Request() req,
+    @UploadedFile() avatar?: Express.Multer.File,
   ) {
-    return this.adminService.updateUser(userId, updateData, req.user.role);
+    return this.adminService.updateUser(userId, updateData, req.user.role, avatar);
   }
 
   // Delete user with role-based restrictions implemented in service

@@ -49,7 +49,7 @@ export class PhotoController {
 
   @Get('recommended')
   @UseGuards(JwtAuthGuard)
-  getRecommendedPhotos(@Req() req, @Query() dto: GetRecommendedPhotosDto) {
+  getRecommendedPhotos(@Req() req, @Query() dto: any) {
     return this.photoService.getRecommendedPhotos(req.user.id, dto);
   }
 
@@ -206,7 +206,14 @@ export class PhotoController {
     @Body() getPhotosDto: GetPhotosDto,
   ): Promise<void> {
     // TODO STATUS CODE
-    await this.photoService.deletePhoto(id, getPhotosDto.userId);
+    const photo = await this.photoService.findOne(id);
+    if (!photo) {
+      throw new NotFoundException(`No photo with id ${id}`);
+    }
+    if (photo.user.id !== getPhotosDto.userId) {
+      throw new ForbiddenException('No permission to photo');
+    }
+    await this.photoService.deletePhoto(id);
   }
 
   @Get('user/:id')

@@ -31,8 +31,4 @@ export class UpdateUserDto {
   @IsString({ each: true })
   @IsOptional()
   interests: string[];
-
-  @IsOptional()
-  @IsEnum(UserRole, { message: 'Role must be either user or admin' })
-  role?: UserRole;
 }

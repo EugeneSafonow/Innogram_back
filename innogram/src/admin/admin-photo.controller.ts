@@ -20,11 +20,19 @@ import { PhotoService } from '../photo/photo.service';
 import { UserRole } from '../entities/user.entity';
 import { PaginatedResponse } from './dto/pagination.dto';
 import { Photo } from '../entities/photo.entity';
+import { IsBoolean } from 'class-validator';
+import { IsOptional } from 'class-validator';
+import { IsString } from 'class-validator';
+import { MaxLength } from 'class-validator';
 
-interface UpdatePhotoDto {
-  description?: string;
-  is_public?: boolean;
-  keyWordIds?: number[];
+class UpdatePhotoDto {
+  @IsString()
+  @MaxLength(496)
+  @IsOptional()
+  description: string;
+
+  @IsBoolean()
+  is_public: boolean;
 }
 
 @Controller('admin/photos')
@@ -72,16 +80,6 @@ export class AdminPhotoController {
     // Verify the photo exists before updating
     await this.adminService.getPhotoById(parseInt(photoId));
 
-    // If keyWordIds are provided, update photo keywords
-    if (updateData.keyWordIds) {
-      // Handle keywords separately with PhotoService
-      await this.photoService.updatePhotoKeyWords(
-        photoId,
-        updateData.keyWordIds,
-      );
-      delete updateData.keyWordIds;
-    }
-
     // Update other photo properties
     return this.adminService.updatePhoto(photoId, updateData);
   }
@@ -90,7 +88,7 @@ export class AdminPhotoController {
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   async deletePhoto(@Param('id') photoId: string) {
-    return this.adminService.deletePhoto(photoId);
+    return this.photoService.deletePhoto(parseInt(photoId));
   }
 
   // Allow admins and moderators to replace photos

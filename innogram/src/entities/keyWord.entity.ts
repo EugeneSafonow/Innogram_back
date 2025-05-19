@@ -8,7 +8,7 @@ import {
 import { Photo } from './photo.entity';
 import { User } from './user.entity';
 
-@Entity()
+@Entity("keywords")
 export class KeyWord {
   @PrimaryGeneratedColumn()
   id: number; //TODO TO UUID
