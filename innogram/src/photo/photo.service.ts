@@ -129,8 +129,8 @@ export class PhotoService {
     const userInterests = await this.interestService.getUserInterests(userId);
     const hasUserInterests = userInterests && userInterests.length > 0;
     
-    // Базовый запрос для всех публичных фотографий
-    const baseQuery = this.photoRepository
+    // Сначала получаем рекомендованные фотографии
+    const recommendedQuery = this.photoRepository
       .createQueryBuilder('photo')
       .leftJoinAndSelect('photo.user', 'user')
       .leftJoinAndSelect('photo.keyWords', 'keyWords')
@@ -151,38 +151,55 @@ export class PhotoService {
       .where('photo.is_public = true')
       .andWhere('photo.user.id != :userId', { userId });
 
-    let photos: Photo[];
-    let total: number;
-
     if (hasUserInterests) {
-      // Получаем все фотографии с флагом, является ли фото рекомендованным
-      const [result, count] = await baseQuery
-        .addSelect(`
-          CASE 
-            WHEN EXISTS (
-              SELECT 1 
-              FROM key_word kw 
-              WHERE kw.photoId = photo.id 
-              AND LOWER(kw.name) IN (:...userInterests)
-            ) THEN true 
-            ELSE false 
-          END`, 'is_recommended')
-        .setParameter('userInterests', userInterests.map(interest => interest.toLowerCase()))
-        .orderBy('is_recommended', 'DESC') // Сначала рекомендованные
-        .addOrderBy('photo.createdAt', 'DESC') // Затем по дате
-        .getManyAndCount();
-
-      photos = result;
-      total = count;
-    } else {
-      // Если у пользователя нет интересов, просто получаем все фото по дате
-      [photos, total] = await baseQuery
-        .orderBy('photo.createdAt', 'DESC')
-        .getManyAndCount();
+      recommendedQuery
+        .andWhere('LOWER(keyWords.name) IN (:...userInterests)')
+        .setParameter('userInterests', userInterests.map(interest => interest.toLowerCase()));
     }
 
-    // Применяем пагинацию
-    const paginatedPhotos = photos.slice(skip, skip + limit);
+    // Получаем остальные фотографии
+    const otherPhotosQuery = this.photoRepository
+      .createQueryBuilder('photo')
+      .leftJoinAndSelect('photo.user', 'user')
+      .leftJoinAndSelect('photo.keyWords', 'keyWords')
+      .leftJoinAndSelect('photo.likes', 'likes')
+      .select([
+        'photo.id',
+        'photo.description',
+        'photo.is_public',
+        'photo.key',
+        'photo.createdAt',
+        'user.id',
+        'user.username',
+        'user.avatarKey',
+        'likes.id',
+        'likes.user',
+        'keyWords',
+      ])
+      .where('photo.is_public = true')
+      .andWhere('photo.user.id != :userId', { userId });
+
+    if (hasUserInterests) {
+      otherPhotosQuery
+        .andWhere('NOT EXISTS (SELECT 1 FROM key_word kw WHERE kw.photoId = photo.id AND LOWER(kw.name) IN (:...userInterests))')
+        .setParameter('userInterests', userInterests.map(interest => interest.toLowerCase()));
+    }
+
+    // Получаем все фотографии
+    const [recommendedPhotos, recommendedTotal] = await recommendedQuery
+      .orderBy('photo.createdAt', 'DESC')
+      .getManyAndCount();
+
+    const [otherPhotos, otherTotal] = await otherPhotosQuery
+      .orderBy('photo.createdAt', 'DESC')
+      .getManyAndCount();
+
+    // Объединяем результаты
+    const allPhotos = [...recommendedPhotos, ...otherPhotos];
+    const total = recommendedTotal + otherTotal;
+
+    // Применяем пагинацию к объединенному результату
+    const paginatedPhotos = allPhotos.slice(skip, skip + limit);
 
     return {
       photos: paginatedPhotos,
