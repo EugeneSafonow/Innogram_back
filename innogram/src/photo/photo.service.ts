@@ -129,7 +129,8 @@ export class PhotoService {
     const userInterests = await this.interestService.getUserInterests(userId);
     const hasUserInterests = userInterests && userInterests.length > 0;
     
-    const query = this.photoRepository
+    // Базовый запрос для всех публичных фотографий
+    const baseQuery = this.photoRepository
       .createQueryBuilder('photo')
       .leftJoinAndSelect('photo.user', 'user')
       .leftJoinAndSelect('photo.keyWords', 'keyWords')
@@ -147,25 +148,45 @@ export class PhotoService {
         'likes.user',
         'keyWords',
       ])
-      .where('photo.is_public = true');
-    
+      .where('photo.is_public = true')
+      .andWhere('photo.user.id != :userId', { userId });
+
+    let photos: Photo[];
+    let total: number;
+
     if (hasUserInterests) {
-      query
-        .andWhere('LOWER(keyWords.name) IN (:...userInterests)')
+      // Получаем все фотографии с флагом, является ли фото рекомендованным
+      const [result, count] = await baseQuery
+        .addSelect(`
+          CASE 
+            WHEN EXISTS (
+              SELECT 1 
+              FROM key_word kw 
+              WHERE kw.photoId = photo.id 
+              AND LOWER(kw.name) IN (:...userInterests)
+            ) THEN true 
+            ELSE false 
+          END`, 'is_recommended')
         .setParameter('userInterests', userInterests.map(interest => interest.toLowerCase()))
-        .orderBy('photo.createdAt', 'DESC');
+        .orderBy('is_recommended', 'DESC') // Сначала рекомендованные
+        .addOrderBy('photo.createdAt', 'DESC') // Затем по дате
+        .getManyAndCount();
+
+      photos = result;
+      total = count;
     } else {
-      query.orderBy('photo.createdAt', 'DESC');
+      // Если у пользователя нет интересов, просто получаем все фото по дате
+      [photos, total] = await baseQuery
+        .orderBy('photo.createdAt', 'DESC')
+        .getManyAndCount();
     }
 
-    const [photos, total] = await query
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    // Применяем пагинацию
+    const paginatedPhotos = photos.slice(skip, skip + limit);
 
     return {
-      photos,
-      hasMore: skip + photos.length < total,
+      photos: paginatedPhotos,
+      hasMore: skip + paginatedPhotos.length < total,
     };
   }
 

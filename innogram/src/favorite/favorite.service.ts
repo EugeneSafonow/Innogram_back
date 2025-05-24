@@ -18,7 +18,7 @@ export class FavoriteService {
 
     async addToFavorites(user: User, dto: AddFavoriteDto): Promise<Favorite> {
         const photo = await this.photoRepository.findOne({
-            where: { id: dto.photoId },
+            where: { id: dto.photoId, is_public: true },  
             relations: ['keyWords'],
         })
 

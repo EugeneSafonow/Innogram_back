@@ -307,7 +307,7 @@ export class SeedService {
           likesCount++;
         }
         
-        if (faker.datatype.boolean(0.4) && photo.is_public) {
+        if (faker.datatype.boolean(0.3)) {
           const favorite = new Favorite();
           favorite.user = user;
           favorite.photo = photo;
