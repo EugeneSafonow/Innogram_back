@@ -1,4 +1,4 @@
-import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../entities/user.entity';
 import { Photo } from '../entities/photo.entity';
@@ -15,7 +15,7 @@ import * as path from 'path';
 import axios from 'axios';
 
 @Injectable()
-export class SeedService implements OnModuleInit {
+export class SeedService {
   constructor(
     @Inject('USER_REPOSITORY')
     private userRepository: Repository<User>,
@@ -33,10 +33,6 @@ export class SeedService implements OnModuleInit {
     private favoriteRepository: Repository<Favorite>,
     private s3Service: S3Service,
   ) {}
-
-  async onModuleInit() {
-    await this.seed();
-  }
 
   async seed() {
     if (process.env.SEED_DB === 'true') {
